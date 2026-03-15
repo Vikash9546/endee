@@ -50,8 +50,8 @@ def delete_by_filename(filename):
     """Deletes all chunks associated with a specific filename."""
     try:
         idx = ensure_index()
-        # Use Endee filter deletion
-        idx.delete_with_filter({"source": {"$eq": filename}})
+        # Endee requires the filter to be inside a list: [{"field": {"$op": "value"}}]
+        idx.delete_with_filter([{"source": {"$eq": filename}}])
         return True
     except Exception as e:
         st.error(f"Failed to delete {filename}: {e}")
