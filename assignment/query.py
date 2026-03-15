@@ -93,7 +93,7 @@ def generate_answer(question: str, contexts: list[str]) -> str:
     Generates an LLM answer using Google Gemini via the provided context.
     """
     prompt = build_prompt(question, contexts)
-    gemini_key = os.environ.get("GEMINI_API_KEY") or "AIzaSyBRGH2qKlAZfDgrBLg7YkNwKETnbjSVNDg"
+    gemini_key = os.environ.get("GEMINI_API_KEY")
     
     if gemini_key:
         try:
@@ -161,7 +161,7 @@ def main():
     print("  🤖  RAG GENERATION (LLM + Endee Context)")
     print("=" * 55)
 
-    has_gemini = bool(os.environ.get("GEMINI_API_KEY") or "AIzaSyBRGH2qKlAZfDgrBLg7YkNwKETnbjSVNDg")
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY"))
 
     if not has_gemini:
         print("\n  ℹ  No Gemini API key found. Set it here:")

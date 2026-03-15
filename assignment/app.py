@@ -299,7 +299,7 @@ if prompt := st.chat_input(f"Enter your query for {app_mode}..."):
         Assistant Answer:
         """
         
-        gemini_key = os.environ.get("GEMINI_API_KEY") or "AIzaSyBRGH2qKlAZfDgrBLg7YkNwKETnbjSVNDg"
+        gemini_key = os.environ.get("GEMINI_API_KEY")
         response_text = None
         
         if gemini_key:

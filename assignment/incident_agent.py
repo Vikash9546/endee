@@ -104,7 +104,7 @@ def run_agentic_loop(new_error: str):
     
     # 2. Reasoning with Gemini
     from google import genai
-    gemini_key = os.environ.get("GEMINI_API_KEY") or "AIzaSyBRGH2qKlAZfDgrBLg7YkNwKETnbjSVNDg"
+    gemini_key = os.environ.get("GEMINI_API_KEY")
     gen_client = genai.Client(api_key=gemini_key)
 
     agent_prompt = f"""
