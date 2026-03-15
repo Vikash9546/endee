@@ -6,7 +6,7 @@ This project demonstrates how to build a production-grade AI system using Endee 
 
 ---
 
-## 🚀 Key AI Features
+## Key AI Features
 
 ### 1. 🤖 AI Knowledge Assistant (CORE RAG)
 Ask complex questions about your private documents. The system retrieves the most relevant context from Endee to provide accurate, cited answers.
@@ -14,14 +14,14 @@ Ask complex questions about your private documents. The system retrieves the mos
 - **Stateful Memory**: Maintains chat history for fluid, multi-turn conversations.
 - **Smart Quota Management**: Features model rotation and backoff logic to ensure reliability on Gemini's free tier.
 
-### 2. 🕵️ Ghost-Protocol: Agentic AI Memory
+### 2. Ghost-Protocol: Agentic AI Memory
 Simulates an **Autonomous SRE Agent** that uses Endee to handle server incidents.
 - **Experience-Driven Decisions**: When an error occurs, the agent consults Endee to find high-similarity past solutions.
 - **Auto-Fix vs. Escalate**: Decides whether to automatically execute a fix for "Easy" known issues or escalate to a human with full context for "Hard" novel problems.
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
 | Step | Functionality | Powered By |
 |------|---------------|------------|
@@ -34,17 +34,17 @@ Simulates an **Autonomous SRE Agent** that uses Endee to handle server incidents
 ### System Architecture
 ```mermaid
 graph TD
-    A["📄 Documents (PDF/MD/TXT)"] --> B["Python Extraction / Vision OCR"]
+    A["Documents (PDF/MD/TXT)"] --> B["Python Extraction / Vision OCR"]
     B --> C["Chunking & Embedding"]
     C -->|384-dim vectors| E[("⚡ Endee Vector Store")]
     
-    F["❓ User Question"] --> G["Semantic Embedding"]
+    F[" User Question"] --> G["Semantic Embedding"]
     G -->|Query vector| E
     E -->|"Top Context Matches"| H["LLM Prompt Assembly"]
     F --> H
     
-    H --> I["🤖 Google Gemini 3-Flash"]
-    I --> J["✅ Fact-Grounded Answer"]
+    H --> I[" Google Gemini 3-Flash"]
+    I --> J[" Fact-Grounded Answer"]
 
     style E fill:#1a1a2e,stroke:#e94560,stroke-width:2px,color:#fff
     style J fill:#0f3460,stroke:#16213e,stroke-width:2px,color:#fff
@@ -52,7 +52,7 @@ graph TD
 
 ---
 
-## 🛠️ Quick Start (Local Setup)
+## Quick Start (Local Setup)
 
 ### 1. Clone & Install
 ```bash
@@ -75,7 +75,7 @@ streamlit run app.py
 
 ---
 
-## 🌐 Cloud Deployment (The "Best" Way)
+## Cloud Deployment (The "Best" Way)
 
 This project is optimized for deployment on **Streamlit Cloud** and **Railway**.
 
