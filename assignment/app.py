@@ -115,6 +115,15 @@ def ensure_index():
             pass
         return client.get_index(name=INDEX_NAME)
 
+# ── Sidebar: Settings & API ──────────────────────────────
+
+st.sidebar.title("⚙️ Settings")
+user_gemini_key = st.sidebar.text_input("Manual Gemini API Key (Overrides .env)", type="password", placeholder="AIzaSy...")
+if user_gemini_key:
+    os.environ["GEMINI_API_KEY"] = user_gemini_key
+
+st.sidebar.markdown("---")
+
 # ── Sidebar: Document Upload ─────────────────────────────
 
 st.sidebar.title("📁 Upload Documents")
@@ -299,14 +308,15 @@ if prompt := st.chat_input(f"Enter your query for {app_mode}..."):
         Assistant Answer:
         """
         
-        gemini_key = os.environ.get("GEMINI_API_KEY")
-        response_text = None
-        
-        if gemini_key:
-            from google import genai
-            gen_client = genai.Client()
+        @st.cache_data(show_spinner=False, ttl=3600)
+        def get_llm_response(prompt_text):
+            current_key = os.environ.get("GEMINI_API_KEY")
+            if not current_key:
+                return None
             
-            # Smart Model Rotation for Quota Resilience
+            from google import genai
+            gen_client = genai.Client(api_key=current_key)
+            
             models_to_try = [
                 "gemini-2.0-flash", 
                 "gemini-2.0-flash-lite-preview-02-05", 
@@ -316,18 +326,17 @@ if prompt := st.chat_input(f"Enter your query for {app_mode}..."):
             
             for model_name in models_to_try:
                 try:
-                    resp = gen_client.models.generate_content(model=model_name, contents=llm_prompt)
+                    resp = gen_client.models.generate_content(model=model_name, contents=prompt_text)
                     if resp.text:
-                        response_text = resp.text
-                        break
+                        return resp.text
                 except Exception as e:
                     if "429" in str(e):
-                        # Rate limited, try next model immediately or after a micro-sleep
-                        time.sleep(1)
+                        time.sleep(2) # Backoff for free tier
                         continue
-                    else:
-                        print(f"LLM Error with {model_name}: {e}")
-                        continue
+            return None
+
+        with st.spinner("Brainstorming answer..."):
+            response_text = get_llm_response(llm_prompt)
         
         if not response_text:
             if kb_results:
