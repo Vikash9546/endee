@@ -310,6 +310,8 @@ if prompt := st.chat_input(f"Enter your query for {app_mode}..."):
             gen_client = genai.Client(api_key=current_key)
             
             models_to_try = [
+                "gemini-3-flash-preview",
+                "gemini-flash-latest",
                 "gemini-2.0-flash", 
                 "gemini-2.0-flash-lite-preview-02-05", 
                 "gemini-1.5-flash", 
