@@ -112,11 +112,22 @@ def vision_ocr_pdf(filepath):
 
 def ensure_index():
     try:
+        # 1. Try to get the index
         return client.get_index(name=INDEX_NAME)
     except Exception as e:
+        # 2. If it failed, check if it's just a missing index or a dead server
+        error_str = str(e).lower()
+        if "not found" in error_str or "404" in error_str:
+            try:
+                # Server is alive, just need to create index
+                client.create_index(name=INDEX_NAME, dimension=DIMENSION, space_type="cosine", precision=Precision.FLOAT32)
+                return client.get_index(name=INDEX_NAME)
+            except Exception as e2:
+                st.error(f"❌ **Index Creation Failed**: {e2}")
+        
+        # 3. Real Connection Error
         st.error(f"❌ **Connection Error**: Could not connect to Endee server at `{os.environ.get('NDD_URL', 'http://localhost:8080')}`")
-        st.info("💡 **Tip**: If you are running on Streamlit Cloud, you must provide a public URL for your Endee server via the `NDD_URL` environment variable.")
-        st.info("If running locally, ensure your Docker container is running: `docker compose up -d`.")
+        st.info("💡 **Tip**: Ensure your Railway server started correctly and the URL in Streamlit Secrets ends with `/api/v1`.")
         st.stop()
 
 
