@@ -127,6 +127,8 @@ def main():
     # ── Step 2: Connect to Endee & Retrieve ───────────
     print(f"[2/3] Querying Endee for top {args.top_k} matching chunks...")
     client = Endee()
+    if os.environ.get("NDD_URL"):
+        client.set_base_url(os.environ.get("NDD_URL"))
 
     try:
         index = client.get_index(name=INDEX_NAME)

@@ -25,6 +25,8 @@ DIMENSION = 384
 print("Loading Sentence-Transformers model...")
 model = SentenceTransformer("all-MiniLM-L6-v2")
 client = Endee()
+if os.environ.get("NDD_URL"):
+    client.set_base_url(os.environ.get("NDD_URL"))
 
 # Ensure fresh index for the demo
 try:

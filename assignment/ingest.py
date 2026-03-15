@@ -82,6 +82,8 @@ def main():
     # ── Connect to Endee ──────────────────────────────
     print("[2/4] Connecting to Endee Vector Database...")
     client = Endee()
+    if os.environ.get("NDD_URL"):
+        client.set_base_url(os.environ.get("NDD_URL"))
 
     # Recreate the index for a clean demo run
     try:

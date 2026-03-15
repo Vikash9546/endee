@@ -39,7 +39,12 @@ def load_model():
 
 @st.cache_resource
 def get_endee():
-    return Endee()
+    # Support remote Endee server (important for Streamlit Cloud)
+    client = Endee()
+    remote_url = os.environ.get("NDD_URL")
+    if remote_url:
+        client.set_base_url(remote_url)
+    return client
 
 model = load_model()
 client = get_endee()
@@ -108,12 +113,11 @@ def vision_ocr_pdf(filepath):
 def ensure_index():
     try:
         return client.get_index(name=INDEX_NAME)
-    except Exception:
-        try:
-            client.create_index(name=INDEX_NAME, dimension=DIMENSION, space_type="cosine", precision=Precision.FLOAT32)
-        except Exception:
-            pass
-        return client.get_index(name=INDEX_NAME)
+    except Exception as e:
+        st.error(f"❌ **Connection Error**: Could not connect to Endee server at `{os.environ.get('NDD_URL', 'http://localhost:8080')}`")
+        st.info("💡 **Tip**: If you are running on Streamlit Cloud, you must provide a public URL for your Endee server via the `NDD_URL` environment variable.")
+        st.info("If running locally, ensure your Docker container is running: `docker compose up -d`.")
+        st.stop()
 
 
 # ── Sidebar: Document Upload ─────────────────────────────
