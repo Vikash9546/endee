@@ -1,6 +1,6 @@
 # ⚡ Endee RAG Knowledge Base & Agentic Memory
 
-A high-performance **Retrieval-Augmented Generation (RAG)** and **Autonomous Agent** platform powered by [Endee](https://github.com/endee-io/endee) — a blazingly fast open-source vector database built for AI memory.
+A high-performance **Retrieval-Augmented Generation (RAG)** and **Autonomous Agent** a blazingly fast open-source vector database built for AI memory.
 
 This project demonstrates how to build a production-grade AI system using Endee as the "Long-Term Memory" to power deep document chat and autonomous incident response.
 
@@ -101,5 +101,3 @@ NDD_URL = "https://your-railway-url.up.railway.app/api/v1"
 - `query.py`: Direct CLI interface for RAG queries.
 - `data/`: Sample technical documentation for testing.
 
----
-© 2026 Endee RAG Platform. [Powered by Endee](https://github.com/endee-io/endee).
