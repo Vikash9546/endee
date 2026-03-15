@@ -46,6 +46,17 @@ def get_endee():
         client.set_base_url(remote_url)
     return client
 
+def delete_by_filename(filename):
+    """Deletes all chunks associated with a specific filename."""
+    try:
+        idx = ensure_index()
+        # Use Endee filter deletion
+        idx.delete_with_filter({"source": {"$eq": filename}})
+        return True
+    except Exception as e:
+        st.error(f"Failed to delete {filename}: {e}")
+        return False
+
 model = load_model()
 # No cache here so it refreshes with the secrets
 client = get_endee()
@@ -185,6 +196,7 @@ if st.sidebar.button("🚀 Ingest into Endee", disabled=not uploaded_files):
                         "id": f"text::{uploaded.name}::{i}",
                         "vector": vec.tolist(),
                         "meta": {"text": chunk, "source": uploaded.name, "type": "text"},
+                        "filter": {"source": uploaded.name}
                     })
                 index.upsert(payloads)
             else:
@@ -196,6 +208,44 @@ if st.sidebar.button("🚀 Ingest into Endee", disabled=not uploaded_files):
     st.sidebar.success(f"✅ Ingested {len(uploaded_files)} file(s) into AI Knowledge Assistant!")
 
 st.sidebar.markdown("---")
+
+# ── Sidebar: Knowledge Management ────────────────────────
+st.sidebar.title("📚 Library Management")
+st.sidebar.markdown("View and manage the files currently in your AI's memory.")
+
+def get_indexed_files():
+    try:
+        idx = ensure_index()
+        # Querying with a blank vector to get the most recent entries
+        results = idx.query(vector=[0.0]*384, top_k=100)
+        sources = set()
+        for r in results:
+            if "source" in r.get("meta", {}):
+                sources.add(r["meta"]["source"])
+        return sorted(list(sources))
+    except:
+        return []
+
+indexed_files = get_indexed_files()
+
+if not indexed_files:
+    st.sidebar.info("🌑 Memory is empty. Upload files to get started.")
+else:
+    for filename in indexed_files:
+        col1, col2 = st.sidebar.columns([4, 1])
+        col1.write(f"📄 {filename}")
+        if col2.button("🗑️", key=f"del_{filename}"):
+            if delete_by_filename(filename):
+                st.sidebar.success(f"Deleted {filename}!")
+                st.rerun()
+
+    if st.sidebar.button("🧨 Wipe Knowledge Base", type="primary", use_container_width=True):
+        try:
+            client.delete_index(INDEX_NAME)
+            st.sidebar.success("Entire Knowledge Base wiped!")
+            st.rerun()
+        except Exception as e:
+            st.sidebar.error(f"Wipe failed: {e}")
 
 st.sidebar.markdown("---")
 st.sidebar.title("🎮 App Navigation")
