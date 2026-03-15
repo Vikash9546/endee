@@ -37,9 +37,9 @@ SIMILARITY_THRESHOLD = 0.5  # Max allowed distance for a 'relevant' match
 def load_model():
     return SentenceTransformer("all-MiniLM-L6-v2")
 
-@st.cache_resource
 def get_endee():
     # Support remote Endee server (important for Streamlit Cloud)
+    # We remove @st.cache_resource to ensure it picks up the latest NDD_URL secret
     client = Endee()
     remote_url = os.environ.get("NDD_URL")
     if remote_url:
@@ -47,6 +47,7 @@ def get_endee():
     return client
 
 model = load_model()
+# No cache here so it refreshes with the secrets
 client = get_endee()
 
 # ── Helper Functions ─────────────────────────────────────
