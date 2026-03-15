@@ -44,10 +44,14 @@ def get_endee():
     remote_url = os.environ.get("NDD_URL")
     if remote_url:
         client.set_base_url(remote_url)
-        # 🛡️ BYPASS TUNNEL REMINDERS (Localtunnel/Ngrok Fix)
+        # 🛡️ AGGRESSIVE TUNNEL BYPASS (Localtunnel/Ngrok)
         if "loca.lt" in remote_url or "ngrok" in remote_url:
             session = client.session_manager.get_session()
-            session.headers.update({"bypass-tunnel-reminder": "true"})
+            session.headers.update({
+                "bypass-tunnel-reminder": "true",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            })
+            session.verify = False # Ignore tunnel SSL issues
     return client
 
 model = load_model()
