@@ -115,19 +115,28 @@ def ensure_index():
         # 1. Try to get the index
         return client.get_index(name=INDEX_NAME)
     except Exception as e:
-        # 2. If it failed, check if it's just a missing index or a dead server
-        error_str = str(e).lower()
-        if "not found" in error_str or "404" in error_str:
+        # 2. Extract and display the real error for debugging
+        raw_error = str(e)
+        error_lower = raw_error.lower()
+        
+        # Check if it's just a missing index
+        if "not found" in error_lower or "404" in error_lower:
             try:
-                # Server is alive, just need to create index
-                client.create_index(name=INDEX_NAME, dimension=DIMENSION, space_type="cosine", precision=Precision.FLOAT32)
+                with st.spinner("🆕 Index 'knowledge_base' not found. Creating it now..."):
+                    client.create_index(name=INDEX_NAME, dimension=DIMENSION, space_type="cosine", precision=Precision.FLOAT32)
                 return client.get_index(name=INDEX_NAME)
             except Exception as e2:
                 st.error(f"❌ **Index Creation Failed**: {e2}")
+                st.stop()
         
-        # 3. Real Connection Error
-        st.error(f"❌ **Connection Error**: Could not connect to Endee server at `{os.environ.get('NDD_URL', 'http://localhost:8080')}`")
-        st.info("💡 **Tip**: Ensure your Railway server started correctly and the URL in Streamlit Secrets ends with `/api/v1`.")
+        # 3. Report detailed connection failure
+        st.error(f"❌ **Connection Error**: Could not connect to Endee server.")
+        st.code(f"Target URL: {os.environ.get('NDD_URL', 'http://localhost:8080')}\nError: {raw_error}")
+        
+        if "none" in raw_error.lower() and "authorization" not in raw_error.lower():
+             st.warning("⚠️ **Hint**: It looks like the Endee client might be receiving a 'None' value where it expects a string. Double check your `NDD_URL` secret.")
+             
+        st.info("💡 **Tip**: Ensure your Railway server URL starts with `https://` and ends with `/api/v1`.")
         st.stop()
 
 
