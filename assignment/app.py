@@ -44,8 +44,8 @@ def get_endee():
     remote_url = os.environ.get("NDD_URL")
     if remote_url:
         client.set_base_url(remote_url)
-        # 🛡️ AGGRESSIVE TUNNEL BYPASS (Localtunnel/Ngrok)
-        if "loca.lt" in remote_url or "ngrok" in remote_url:
+        # 🛡️ AGGRESSIVE TUNNEL BYPASS (Localtunnel/Ngrok/Pinggy)
+        if any(x in remote_url for x in ["loca.lt", "ngrok", "pinggy.link"]):
             session = client.session_manager.get_session()
             session.headers.update({
                 "bypass-tunnel-reminder": "true",
