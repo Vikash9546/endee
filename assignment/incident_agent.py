@@ -8,8 +8,8 @@ When a server crash or error occurs, the Agent:
   2. Analyzes the retrieved context (past solutions).
   3. Decides to either "Fix" (generate code) or "Escalate" (summarize for human).
 
-Note: Works with OpenAI GPT-4o-mini if a valid API key is set.
-Otherwise, runs a Local Simulation fallback to demonstrate the autonomous flow!
+Note: Powered by Google Gemini 3-Flash (via GEMINI_API_KEY).
+Uses Endee for stateful incident retrieval.
 """
 
 import os
@@ -89,29 +89,44 @@ def search_memory(error_signature: str) -> str:
     return f"Past Issue: {match['error_str']}. Past Solution: {match['solution']}. Difficulty: {match['difficulty']}."
 
 
-# ── 4. The Agentic Loop (OpenAI or Local Simulation) ────────
+# ── 4. The Agentic Loop (Gemini Powered) ───────────────────
 
-def local_simulated_agent_loop(new_error: str):
+def run_agentic_loop(new_error: str):
     """
-    Runs the agentic logic locally without needing a paid API key.
-    Demonstrates the exact decision tree an LLM would make.
+    Runs the autonomous agent loop using Gemini 3-Flash.
+    The agent consults its Endee memory before making a decision.
     """
     print(f"\n🚨 NEW ALERT RECEIVED: {new_error}\n")
-    print("🤖 Agent State: Analyzing alert...")
+    print("🤖 Agent Thinking: Analyzing alert signature...")
     
-    # Step A: Agent autonomously decides to use the search_memory tool
+    # 1. Autonomous Retrieval from Endee Memory
     memory_result = search_memory(new_error)
     
-    print("\n🤖 Agent State: Reasoning over retrieved memory...\n")
+    # 2. Reasoning with Gemini
+    from google import genai
+    gemini_key = os.environ.get("GEMINI_API_KEY") or "AIzaSyBRGH2qKlAZfDgrBLg7YkNwKETnbjSVNDg"
+    gen_client = genai.Client(api_key=gemini_key)
+
+    agent_prompt = f"""
+    You are an Autonomous Site Reliability Engineering (SRE) Agent. 
+    You have just received a server error: "{new_error}"
     
-    # Step B: Agent decides to Fix or Escalate based on memory
-    if "No similar past incidents" in memory_result:
-        print(">> [DECISION: ESCALATE ☎️] This is a novel error. I have no past memory of this. Paging human SRE on-call.")
-    elif "Easy" in memory_result:
-        print(f">> [DECISION: AUTO-FIX 🛠️] I remember this exact signature! Executing Fix Script:")
-        print(f"   Executing System Command --> '{memory_result.split('Past Solution: ')[1].split('.')[0]}'")
-    elif "Hard" in memory_result:
-        print(f">> [DECISION: ESCALATE w/ CONTEXT ⚠️] I remember this, but it requires human authorization. Escalating with context: {memory_result}")
+    You searched your internal Endee Long-Term Memory and found this:
+    {memory_result}
+
+    DECISION RULES:
+    1. If the memory contains a solution and the difficulty is 'Easy', output: "DECISION: AUTO-FIX 🛠️" followed by the fix command.
+    2. If the difficulty is 'Hard' or context is complex, output: "DECISION: ESCALATE w/ CONTEXT ⚠️" followed by a summary for a human.
+    3. If no similar incidents were found, output: "DECISION: EMERGENCY ESCALATE ☎️".
+
+    Assistant:
+    """
+
+    try:
+        response = gen_client.models.generate_content(model="gemini-3-flash-preview", contents=agent_prompt)
+        print(f"\n🤖 Agent Decision Engine:\n{response.text}\n")
+    except Exception as e:
+        print(f"❌ Agent Loop Failed: {e}")
 
 
 # ── RUN PLAYBOOKS ──────────────────────────────────────────
@@ -122,13 +137,13 @@ if __name__ == "__main__":
     print("==================================================================")
     
     print("\n--- Playbook 1: A Known, Auto-Fixable Issue ---")
-    local_simulated_agent_loop("URGENT: Database crashing. Connection Refused to Postgres on port 5432.")
+    run_agentic_loop("URGENT: Database crashing. Connection Refused to Postgres on port 5432.")
     
     print("\n--- Playbook 2: A Known, Hard Issue (Requires Escalation) ---")
-    local_simulated_agent_loop("Production down: K8s pods encountering OOMKilled limits constantly.")
+    run_agentic_loop("Production down: K8s pods encountering OOMKilled limits constantly.")
     
     print("\n--- Playbook 3: A Completely Unknown Issue ---")
-    local_simulated_agent_loop("Kafka brokers encountering Split-Brain network partition anomaly.")
+    run_agentic_loop("Kafka brokers encountering Split-Brain network partition anomaly.")
     
     print("\n==================================================================")
     print("✓ Agent executed successfully via Endee Vector Memory routing.")
