@@ -122,6 +122,46 @@ We welcome contributions from the community to help make vector search faster an
 - Report bugs or performance issues through GitHub issues
 - Propose enhancements for search quality, performance, and deployment workflows
 
+## 🚀 Advanced AI Features (Assignment)
+
+The `/assignment` directory contains a high-performance demonstration of Endee's capabilities in RAG and Agentic workflows.
+
+### 🤖 AI Knowledge Assistant (Stateful RAG)
+A professional conversational interface for chatting with private documents.
+- **Handwriting OCR**: Automatically detects and extracts text from handwritten notes using Gemini Vision.
+- **Stateful Memory**: Remembers chat history for fluid, multi-turn follow-ups.
+- **Source Citations**: Every answer includes clickable references to the original document chunks.
+- **Grounding**: Guarantees zero-hallucination answers by sticking strictly to the ingested context.
+
+### 🕵️ Agentic AI Memory (Ghost-Protocol)
+An autonomous "Incident Response" agent that uses Endee as its long-term stateful memory.
+- **Autonomous Decision Engine**: Analyzes server alert signatures in real-time.
+- **Adaptive Memory**: Consults past incidents in Endee to decide between an **Auto-Fix** or **Escalation**.
+- **Continuous Learning**: Every incident resolution builds the agent's future intelligence.
+
+---
+
+## 🛠️ Getting Started with AI Modes
+
+1. **Navigate to the feature folder**:
+   ```bash
+   cd assignment
+   ```
+
+2. **Configure Secrets**:
+   Create a `.env` file with your Gemini API key:
+   ```env
+   GEMINI_API_KEY=your_google_ai_key
+   ```
+
+3. **Run the Dashboard**:
+   ```bash
+   streamlit run app.py
+   ```
+
+---
+© 2026 Endee AI. Built for high-speed intelligence.
+
 ## License
 
 Endee is open source software licensed under the **Apache License 2.0**. See the [LICENSE](./LICENSE) file for full terms.
