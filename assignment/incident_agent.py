@@ -105,7 +105,10 @@ def run_agentic_loop(new_error: str):
     # 2. Reasoning with Gemini
     from google import genai
     gemini_key = os.environ.get("GEMINI_API_KEY")
-    gen_client = genai.Client(api_key=gemini_key)
+    if not gemini_key:
+        print("❌ Error: GEMINI_API_KEY not found in environment.")
+        return
+    gen_client = genai.Client()
 
     agent_prompt = f"""
     You are an Autonomous Site Reliability Engineering (SRE) Agent. 

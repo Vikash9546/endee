@@ -74,7 +74,7 @@ def vision_ocr_pdf(filepath):
     import io
     from concurrent.futures import ThreadPoolExecutor
     
-    gen_client = genai.Client(api_key=gemini_key)
+    gen_client = genai.Client()
     doc = fitz.open(filepath)
     
     def process_page(page_num):
@@ -304,7 +304,7 @@ if prompt := st.chat_input(f"Enter your query for {app_mode}..."):
         
         if gemini_key:
             from google import genai
-            gen_client = genai.Client(api_key=gemini_key)
+            gen_client = genai.Client()
             
             # Smart Model Rotation for Quota Resilience
             models_to_try = [

@@ -51,12 +51,12 @@ def build_prompt(question: str, contexts: list[str]) -> str:
 
 
 
-def generate_with_gemini(prompt: str, api_key: str) -> str:
+def generate_with_gemini(prompt: str) -> str:
     """Generate answer using Google Gemini (free tier) via new google-genai library."""
     from google import genai
     import time as _time
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client()
 
     # Try requested model, then fallbacks
     models_to_try = [
@@ -97,7 +97,7 @@ def generate_answer(question: str, contexts: list[str]) -> str:
     
     if gemini_key:
         try:
-            return generate_with_gemini(prompt, gemini_key)
+            return generate_with_gemini(prompt)
         except Exception as e:
             print(f"  ⚠  Gemini failed: {e}")
 
