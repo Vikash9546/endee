@@ -1,1 +1,0 @@
-fix(ocr): Add model fallback and ensure Pillow dependency for robust Vision OCR
