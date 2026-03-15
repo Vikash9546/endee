@@ -213,6 +213,10 @@ st.sidebar.markdown("---")
 st.sidebar.title("📚 Library Management")
 st.sidebar.markdown("View and manage the files currently in your AI's memory.")
 
+# Initialize deleted files tracker in session state if not present
+if "deleted_files" not in st.session_state:
+    st.session_state.deleted_files = set()
+
 def get_indexed_files():
     try:
         idx = ensure_index()
@@ -222,7 +226,10 @@ def get_indexed_files():
         for r in results:
             if "source" in r.get("meta", {}):
                 sources.add(r["meta"]["source"])
-        return sorted(list(sources))
+        
+        # Filter out files that were just deleted in this session
+        current_sources = [s for s in sources if s not in st.session_state.deleted_files]
+        return sorted(list(current_sources))
     except:
         return []
 
@@ -236,7 +243,10 @@ else:
         col1.write(f"📄 {filename}")
         if col2.button("🗑️", key=f"del_{filename}"):
             if delete_by_filename(filename):
+                # Instantly mark as deleted in session state for UI feel
+                st.session_state.deleted_files.add(filename)
                 st.sidebar.success(f"Deleted {filename}!")
+                time.sleep(1) # Let the user see the success message
                 st.rerun()
 
     if st.sidebar.button("🧨 Wipe Knowledge Base", type="primary", use_container_width=True):
