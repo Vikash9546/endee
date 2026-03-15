@@ -1,53 +1,50 @@
-# ⚡ Endee RAG Knowledge Base
+# ⚡ Endee RAG Knowledge Base & Agentic Memory
 
-A **Retrieval-Augmented Generation (RAG)** chatbot powered by [Endee](https://github.com/endee-io/endee) — a high-performance open-source vector database built for AI search.
+A high-performance **Retrieval-Augmented Generation (RAG)** and **Autonomous Agent** platform powered by [Endee](https://github.com/endee-io/endee) — a blazingly fast open-source vector database built for AI memory.
 
-Upload technical docs (PDFs, Markdown, Text), and the chatbot answers questions based **only** on those documents.
-
----
-
-## Problem Statement
-
-Traditional keyword search fails when users ask conceptual questions like *"How do I connect Prisma to MongoDB?"*. This project solves that with **semantic search** — it understands the *meaning* behind a query, retrieves the most relevant chunks from your documents stored in Endee, and feeds them to an LLM to generate a precise answer.
+This project demonstrates how to build a production-grade AI system using Endee as the "Long-Term Memory" to power deep document chat and autonomous incident response.
 
 ---
 
-## How It Works
+## 🚀 Key AI Features
 
-### The Python Workflow
+### 1. 🤖 AI Knowledge Assistant (CORE RAG)
+Ask complex questions about your private documents. The system retrieves the most relevant context from Endee to provide accurate, cited answers.
+- **Visual OCR Support**: Uses Gemini Vision to read and extract text from handwritten notes or scanned PDFs.
+- **Stateful Memory**: Maintains chat history for fluid, multi-turn conversations.
+- **Smart Quota Management**: Features model rotation and backoff logic to ensure reliability on Gemini's free tier.
 
-| Step | What Happens | Tool Used |
-|------|-------------|-----------|
-| **1. Extract Text** | Read PDFs, Markdown, and `.txt` files | `PyMuPDF (fitz)` |
-| **2. Chunking** | Split text into ~500-character overlapping pieces | Custom chunker |
-| **3. Embeddings** | Convert each chunk into a 384-dim vector | `sentence-transformers/all-MiniLM-L6-v2` |
-| **4. Store in Endee** | Upsert vectors + metadata into the vector database | `endee` Python SDK |
-| **5. Retrieve** | User question → vector → find top 3 closest chunks in Endee | `Endee.query()` |
-| **6. Generate** | Send chunks + question to LLM → get a grounded answer | `OpenAI GPT-4o-mini` |
+### 2. 🕵️ Ghost-Protocol: Agentic AI Memory
+Simulates an **Autonomous SRE Agent** that uses Endee to handle server incidents.
+- **Experience-Driven Decisions**: When an error occurs, the agent consults Endee to find high-similarity past solutions.
+- **Auto-Fix vs. Escalate**: Decides whether to automatically execute a fix for "Easy" known issues or escalate to a human with full context for "Hard" novel problems.
 
-```python
-# Embedding example (Step 3)
-from sentence_transformers import SentenceTransformer
-model = SentenceTransformer('all-MiniLM-L6-v2')
-vector = model.encode("How to connect Prisma to MongoDB?")
-```
+---
 
-### Architecture Diagram
+## 🧠 How It Works
 
+| Step | Functionality | Powered By |
+|------|---------------|------------|
+| **1. Text Extraction** | Parses PDF, MD, and Text (including OCR for images) | `PyMuPDF` + `Gemini Vision` |
+| **2. Vectorization** | Converts text into 384-dim semantic embeddings | `sentence-transformers` |
+| **3. Vector Storage** | Blazing-fast indexing and similarity search | **Endee Vector Database** |
+| **4. Retrieval** | Finds the top context chunks for any query | `Endee.query()` |
+| **5. Generation** | Generates professional, grounded answers | **Google Gemini 3-Flash** |
+
+### System Architecture
 ```mermaid
 graph TD
-    A["📄 PDFs / Markdown / Text"] --> B["Python: PyMuPDF Text Extraction"]
-    B --> C["Chunking (500 chars, 50 overlap)"]
-    C --> D["Sentence-Transformers Embedding"]
-    D -->|384-dim vectors| E[("⚡ Endee Vector Database")]
+    A["📄 Documents (PDF/MD/TXT)"] --> B["Python Extraction / Vision OCR"]
+    B --> C["Chunking & Embedding"]
+    C -->|384-dim vectors| E[("⚡ Endee Vector Store")]
     
-    F["❓ User Question"] --> G["Sentence-Transformers Embedding"]
+    F["❓ User Question"] --> G["Semantic Embedding"]
     G -->|Query vector| E
-    E -->|"Top 3 context chunks"| H["Prompt Assembly"]
+    E -->|"Top Context Matches"| H["LLM Prompt Assembly"]
     F --> H
     
-    H --> I["🤖 OpenAI GPT-4o-mini"]
-    I --> J["✅ Final Answer"]
+    H --> I["🤖 Google Gemini 3-Flash"]
+    I --> J["✅ Fact-Grounded Answer"]
 
     style E fill:#1a1a2e,stroke:#e94560,stroke-width:2px,color:#fff
     style J fill:#0f3460,stroke:#16213e,stroke-width:2px,color:#fff
@@ -55,175 +52,54 @@ graph TD
 
 ---
 
-## Quick Start (3 Commands)
+## 🛠️ Quick Start (Local Setup)
 
-### Prerequisites
-- Python 3.10+
-- Docker installed and running
-
-### 1. Install dependencies
+### 1. Clone & Install
 ```bash
-git clone https://github.com/Vikash9546/Endee-RAG-Demo.git
-cd Endee-RAG-Demo
-python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-```
-
-### 2. Start Endee + ingest sample docs
-```bash
-docker run -d -p 8080:8080 --name endee endeeio/endee-server:latest && python ingest.py
-```
-
-### 3. Query the knowledge base
-```bash
-# Option A: Use Google Gemini (FREE — get key at https://aistudio.google.com/apikey)
-export GEMINI_API_KEY="gemini_api_key"
-python query.py "What is Endee built for?"
-
-# Option B: Use OpenAI GPT-4o-mini (paid)
-export OPENAI_API_KEY="sk-your-key-here"
-python query.py "What is Endee built for?"
-```
-
-> **How it works:** The script tries OpenAI first, then falls back to Gemini. If neither key is set, it still returns the raw semantic search results from Endee.
-
----
-
-### Option 3: "Ghost-Protocol" (Agentic AI Workflow)
-An AI agent that can "browse" its own memory to complete a multi-step task for **Automated Incident Response**.
-```bash
-python incident_agent.py
-```
-This runs an autonomous loop where the agent:
-1. Receives a server crash error.
-# ⚡ Endee AI: Knowledge & Agentic Memory Platform
-
-A high-performance implementation of **RAG (Retrieval Augmented Generation)** and **Autonomous Agent Operations** using the **Endee Vector Database**.
-
----
-
-### 🚀 Core Features
-
-#### 1. 🤖 AI Knowledge Assistant (Stateful RAG)
-A professional-grade conversational interface that allows you to chat with your private documents.
-- **Deep PDF/MD Ingestion**: Parses and chunks documents into Endee.
-- **Stateful Memory**: Remembers chat history for fluid, multi-turn follow-ups.
-- **Grounding & Citations**: Answers are strictly based on provided context with automatic source attribution.
-- **Gemini 3-Flash Integration**: Uses the latest fast-inference models for near-instant responses.
-
-#### 2. 🕵️ Agentic AI Memory (Ghost-Protocol)
-An autonomous "Incident Response" agent that uses Endee as its long-term stateful memory.
-- **Autonomous Decision Engine**: Detects the severity of incoming alerts.
-- **Memory-Driven Logic**: Consults past "experience" in Endee to decide whether to **Auto-Fix** a server or **Escalate** to a human.
-- **Persistent State**: Learns from every past incident logged in the vector store.
-
----
-
-### 🛠️ Quick Start
-
-1. **Install Dependencies**:
-```bash
+git clone https://github.com/Vikash9546/endee.git
+cd endee/assignment
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. **Configure Environment**:
-Create a `.env` file with:
-```env
-GEMINI_API_KEY=your_key_here
+### 2. Launch Endee Database
+```bash
+docker compose up -d
 ```
 
-3. **Launch the Dashboard**:
+### 3. Run the Dashboard
+Ensure your `.env` file contains your `GEMINI_API_KEY`:
 ```bash
 streamlit run app.py
 ```
 
 ---
 
-### 📁 Project Structure
-- `app.py`: The main Streamlit dashboard featuring both AI modes.
-- `incident_agent.py`: CLI logic for the Ghost-Protocol agent.
-- `ingest.py`: Core logic for vectorizing text data into Endee.
-- `query.py`: Script for direct semantic querying of the vector store.
+## 🌐 Cloud Deployment (The "Best" Way)
 
----
-© 2026 Endee AI Project. Built for high-speed intelligence.
+This project is optimized for deployment on **Streamlit Cloud** and **Railway**.
 
----
+### 1. Database (Railway.app)
+Deploy the `endeeio/endee-server:latest` image to Railway. 
+- Set `PORT` to `8080`.
+- Generate a public domain (e.g., `https://endee-server.up.railway.app`).
 
-## How Endee Is Used
-
-Endee is the **core component** of this application — it acts as the "memory" for the AI:
-
-1. **Index Creation** — We create a vector index with `dimension=384`, `space_type="cosine"`, and `precision=FLOAT32` via `client.create_index()`.
-2. **Upserting Vectors** — Document chunks are embedded and stored with `index.upsert()`, including metadata (source file, chunk text, chunk index).
-3. **Querying** — User questions are embedded with the **same model** and sent to `index.query(vector=..., top_k=3)` for nearest-neighbor retrieval.
-4. **RAG Pipeline** — The top 3 matching chunks from Endee are injected into the LLM prompt as grounding context, ensuring the AI answers based on *your* documents.
-
----
-
-## Project Structure
-
-```
-endee-rag-demo/
-├── app.py               # Streamlit chatbot UI (upload PDFs, ask questions)
-├── ingest.py            # Ingestion pipeline: extract → chunk → embed → upsert
-├── query.py             # CLI: semantic search + RAG generation
-├── recommendation.py    # Bonus: product recommendation via vector similarity
-├── agent.py             # Bonus: agentic AI memory pattern using Endee
-├── data/                # Place your PDFs / Markdown / Text files here
-│   └── endee_overview.md
-├── docker-compose.yml   # One-command Endee server setup
-├── requirements.txt     # Python dependencies
-└── README.md            # This file
+### 2. Frontend (Streamlit Cloud)
+Connect your GitHub repo to Streamlit Cloud and add the following **Secrets**:
+```toml
+GEMINI_API_KEY = "your_gemini_key"
+NDD_URL = "https://your-railway-url.up.railway.app/api/v1"
 ```
 
 ---
 
-## Example Output
+## 📁 Project Structure
 
-```
-╔══════════════════════════════════════════════════╗
-║   Endee Knowledge Base — RAG Query Engine       ║
-╚══════════════════════════════════════════════════╝
-
-[1/3] Encoding question: "What is Endee built for?"
-[2/3] Querying Endee for top 3 matching chunks...
-
-  🔍  SEMANTIC SEARCH RESULTS (from Endee)
-=======================================================
-
-  [1] data/endee_overview.md  (distance: 0.4544)
-      # Endee: High-Performance Vector Database ...
-
-  [2] data/endee_overview.md  (distance: 0.4669)
-      Endee is a specialized, open-source vector database ...
-
-  🤖  RAG GENERATION (LLM + Endee Context)
-=======================================================
-
-  ╔══════════════════════════════════════════════╗
-  ║  ✨  FINAL ANSWER                           ║
-  ╚══════════════════════════════════════════════╝
-
-  Endee is built for speed, efficiency, and scale required
-  by production AI systems. It supports semantic search,
-  RAG workflows, agentic memory, and hybrid search...
-```
+- `app.py`: Main Dashboard (Management UI + Chat).
+- `ingest.py`: Pipeline for mass-vectorizing folder data.
+- `incident_agent.py`: CLI implementation of the Agentic Memory logic.
+- `query.py`: Direct CLI interface for RAG queries.
+- `data/`: Sample technical documentation for testing.
 
 ---
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| Vector Database | [Endee](https://github.com/endee-io/endee) |
-| Embeddings | `sentence-transformers/all-MiniLM-L6-v2` |
-| PDF Extraction | `PyMuPDF` |
-| LLM | OpenAI `gpt-4o-mini` |
-| Frontend | Streamlit |
-| Containerization | Docker |
-
----
-
-## License
-
-MIT
+© 2026 Endee RAG Platform. [Powered by Endee](https://github.com/endee-io/endee).
