@@ -115,14 +115,6 @@ def ensure_index():
             pass
         return client.get_index(name=INDEX_NAME)
 
-# ── Sidebar: Settings & API ──────────────────────────────
-
-st.sidebar.title("⚙️ Settings")
-user_gemini_key = st.sidebar.text_input("Manual Gemini API Key (Overrides .env)", type="password", placeholder="AIzaSy...")
-if user_gemini_key:
-    os.environ["GEMINI_API_KEY"] = user_gemini_key
-
-st.sidebar.markdown("---")
 
 # ── Sidebar: Document Upload ─────────────────────────────
 
