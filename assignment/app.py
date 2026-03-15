@@ -299,20 +299,35 @@ if prompt := st.chat_input(f"Enter your query for {app_mode}..."):
         Assistant Answer:
         """
         
-        gemini_key = os.environ.get("GEMINI_API_KEY")
+        gemini_key = os.environ.get("GEMINI_API_KEY") or "AIzaSyBRGH2qKlAZfDgrBLg7YkNwKETnbjSVNDg"
         response_text = None
         
         if gemini_key:
-            try:
-                from google import genai
-                gen_client = genai.Client(api_key=gemini_key)
-                resp = gen_client.models.generate_content(model="gemini-3-flash-preview", contents=llm_prompt)
-                response_text = resp.text
-            except:
+            from google import genai
+            gen_client = genai.Client(api_key=gemini_key)
+            
+            # Smart Model Rotation for Quota Resilience
+            models_to_try = [
+                "gemini-2.0-flash", 
+                "gemini-2.0-flash-lite-preview-02-05", 
+                "gemini-1.5-flash", 
+                "gemini-1.5-flash-8b"
+            ]
+            
+            for model_name in models_to_try:
                 try:
-                    resp = gen_client.models.generate_content(model="gemini-2.0-flash", contents=llm_prompt)
-                    response_text = resp.text
-                except: pass
+                    resp = gen_client.models.generate_content(model=model_name, contents=llm_prompt)
+                    if resp.text:
+                        response_text = resp.text
+                        break
+                except Exception as e:
+                    if "429" in str(e):
+                        # Rate limited, try next model immediately or after a micro-sleep
+                        time.sleep(1)
+                        continue
+                    else:
+                        print(f"LLM Error with {model_name}: {e}")
+                        continue
         
         if not response_text:
             if kb_results:

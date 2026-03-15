@@ -59,23 +59,33 @@ def generate_with_gemini(prompt: str, api_key: str) -> str:
     client = genai.Client(api_key=api_key)
 
     # Try requested model, then fallbacks
-    models_to_try = ["gemini-3-flash-preview", "gemini-2.0-flash-lite", "gemini-2.0-flash"]
-    last_error = None
+    models_to_try = [
+        "gemini-2.0-flash", 
+        "gemini-2.0-flash-lite-preview-02-05", 
+        "gemini-1.5-flash", 
+        "gemini-1.5-flash-8b"
+    ]
 
+    response_text = None
     for model_name in models_to_try:
         for attempt in range(2):  # retry once per model
             try:
                 response = client.models.generate_content(model=model_name, contents=prompt)
-                return response.text
+                if response.text:
+                    response_text = response.text
+                    break  # Break from attempt loop if successful
             except Exception as e:
-                last_error = e
-                # Basic rate limit check for retry
-                if "429" in str(e) and attempt == 0:
-                    _time.sleep(10)
+                if "429" in str(e):
+                    _time.sleep(2)
                 else:
-                    break  # skip to next model
-    
-    raise last_error
+                    break  # Skip to next model if not a rate limit error
+        if response_text:
+            break  # Break from model loop if successful
+
+    if response_text:
+        return response_text
+    else:
+        raise Exception("All Gemini models failed to generate a response.")
 
 
 def generate_answer(question: str, contexts: list[str]) -> str:

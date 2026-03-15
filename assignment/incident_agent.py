@@ -122,11 +122,28 @@ def run_agentic_loop(new_error: str):
     Assistant:
     """
 
-    try:
-        response = gen_client.models.generate_content(model="gemini-3-flash-preview", contents=agent_prompt)
-        print(f"\n🤖 Agent Decision Engine:\n{response.text}\n")
-    except Exception as e:
-        print(f"❌ Agent Loop Failed: {e}")
+    # Optimized Model Rotation for Quota Resilience
+    models_to_try = [
+        "gemini-2.0-flash", 
+        "gemini-2.0-flash-lite-preview-02-05", 
+        "gemini-1.5-flash", 
+        "gemini-1.5-flash-8b"
+    ]
+    
+    response_text = None
+    for model_name in models_to_try:
+        try:
+            response = gen_client.models.generate_content(model=model_name, contents=agent_prompt)
+            if response.text:
+                response_text = response.text
+                break
+        except Exception as e:
+            continue
+
+    if response_text:
+        print(f"\n🤖 Agent Decision Engine:\n{response_text}\n")
+    else:
+        print(f"❌ Agent Loop Failed: Quota exceeded on all Gemini models.")
 
 
 # ── RUN PLAYBOOKS ──────────────────────────────────────────
