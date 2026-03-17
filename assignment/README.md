@@ -101,5 +101,4 @@ NDD_URL = "https://your-railway-url.up.railway.app/api/v1"
 - `ingest.py`: Pipeline for mass-vectorizing folder data.
 - `incident_agent.py`: CLI implementation of the Agentic Memory logic.
 - `query.py`: Direct CLI interface for RAG queries.
-- `data/`: Sample technical documentation for testing.
 
