@@ -13,8 +13,6 @@ services:
     volumes:
       - endee_data:/data
     restart: unless-stopped
-    # environment:
-    #   - NDD_AUTH_TOKEN=your_token_here
 
 volumes:
   endee_data:
