@@ -1,179 +1,104 @@
-<p align="center">
-  <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg">
-      <img height="100" alt="Endee" src="docs/assets/logo-dark.svg">
-  </picture>
-</p>
+# ⚡ Endee RAG Knowledge Base & Agentic Memory
 
-<p align="center">
-    <b>High-performance open-source vector database for AI search, RAG, semantic search, and hybrid retrieval.</b>
-</p>
+A high-performance **Retrieval-Augmented Generation (RAG)** and **Autonomous Agent** a blazingly fast open-source vector database built for AI memory.
 
-<p align="center">
-    <a href="./docs/getting-started.md"><img src="https://img.shields.io/badge/Quick_Start-Local_Setup-success?style=flat-square" alt="Quick Start"></a>
-    <a href="https://docs.endee.io/quick-start"><img src="https://img.shields.io/badge/Docs-Quick_Start-success?style=flat-square" alt="Docs"></a>
-    <a href="https://github.com/endee-io/endee/blob/master/LICENSE"><img src="https://img.shields.io/github/license/endee-io/endee?style=flat-square" alt="License"></a>
-    <a href="https://discord.gg/5HFGqDZQE3"><img src="https://img.shields.io/badge/Discord-Join_Chat-5865F2?logo=discord&style=flat-square" alt="Discord"></a>
-    <a href="https://endee.io/"><img src="https://img.shields.io/badge/Website-Endee-111111?style=flat-square" alt="Website"></a>
-    <!-- <a href="https://endee.io/benchmarks"><img src="https://img.shields.io/badge/Benchmarks-Coming_Soon-1F8B4C?style=flat-square" alt="Benchmarks"></a> -->
-    <!-- <a href="https://endee.io/cloud"><img src="https://img.shields.io/badge/Cloud-Coming_Soon-2496ED?style=flat-square" alt="Cloud"></a> -->
-</p>
+This project demonstrates how to build a production-grade AI system using Endee as the "Long-Term Memory" to power deep document chat and autonomous incident response.
 
-<p align="center">
-<strong><a href="./docs/getting-started.md">Quick Start</a> • <a href="#why-endee">Why Endee</a> • <a href="#use-cases">Use Cases</a> • <a href="#features">Features</a> • <a href="#api-and-clients">API and Clients</a> • <a href="#docs-and-links">Docs</a> • <a href="#community-and-contact">Contact</a></strong>
-</p>
+*🌐 Live Demo*: [Live](https://vikash9546-endee-assignmentapp-uhvshp.streamlit.app/)
 
-# Endee: Open-Source Vector Database for AI Search
+---
 
-**Endee** is a high-performance open-source vector database built for AI search and retrieval workloads. It is designed for teams building **RAG pipelines**, **semantic search**, **hybrid search**, recommendation systems, and filtered vector retrieval APIs that need production-oriented performance and control.
+## Key AI Features
 
-Endee combines vector search with filtering, sparse retrieval support, backup workflows, and deployment flexibility across local builds and Docker-based environments. The project is implemented in C++ and optimized for modern CPU targets, including AVX2, AVX512, NEON, and SVE2.
+### 1. 🤖 AI Knowledge Assistant (CORE RAG)
+Ask complex questions about your private documents. The system retrieves the most relevant context from Endee to provide accurate, cited answers.
+- **Visual OCR Support**: Uses Gemini Vision to read and extract text from handwritten notes or scanned PDFs.
+- **Stateful Memory**: Maintains chat history for fluid, multi-turn conversations.
+- **Smart Quota Management**: Features model rotation and backoff logic to ensure reliability on Gemini's free tier.
 
-If you want the fastest path to evaluate Endee locally, start with the [Getting Started guide](./docs/getting-started.md) or the hosted docs at [docs.endee.io](https://docs.endee.io/quick-start).
+### 2. Ghost-Protocol: Agentic AI Memory
+Simulates an **Autonomous SRE Agent** that uses Endee to handle server incidents.
+- **Experience-Driven Decisions**: When an error occurs, the agent consults Endee to find high-similarity past solutions.
+- **Auto-Fix vs. Escalate**: Decides whether to automatically execute a fix for "Easy" known issues or escalate to a human with full context for "Hard" novel problems.
 
-## Why Endee
+---
 
-- Built as a dedicated vector database for AI applications, search systems, and retrieval-heavy workloads.
-- Supports dense vector retrieval plus sparse search capabilities for hybrid search use cases.
-- Includes payload filtering for metadata-aware retrieval and application-specific query logic.
-- Ships with operational features already documented in this repo, including backup flows and runtime observability.
-- Offers flexible deployment paths: local scripts, manual builds, Docker images, and prebuilt registry images.
+## How It Works
 
-## Getting Started
+| Step | Functionality | Powered By |
+|------|---------------|------------|
+| **1. Text Extraction** | Parses PDF, MD, and Text (including OCR for images) | `PyMuPDF` + `Gemini Vision` |
+| **2. Vectorization** | Converts text into 384-dim semantic embeddings | `sentence-transformers` |
+| **3. Vector Storage** | Blazing-fast indexing and similarity search | **Endee Vector Database** |
+| **4. Retrieval** | Finds the top context chunks for any query | `Endee.query()` |
+| **5. Generation** | Generates professional, grounded answers | **Google Gemini 3-Flash** |
 
-The full installation, build, Docker, runtime, and authentication instructions are in [docs/getting-started.md](./docs/getting-started.md).
+### System Architecture
+```mermaid
+graph TD
+    A["Documents (PDF/MD/TXT)"] --> B["Python Extraction / Vision OCR"]
+    B --> C["Chunking & Embedding"]
+    C -->|384-dim vectors| E[("⚡ Endee Vector Store")]
+    
+    F[" User Question"] --> G["Semantic Embedding"]
+    G -->|Query vector| E
+    E -->|"Top Context Matches"| H["LLM Prompt Assembly"]
+    F --> H
+    
+    H --> I[" Google Gemini 3-Flash"]
+    I --> J[" Fact-Grounded Answer"]
 
-Fastest local path:
-
-```bash
-chmod +x ./install.sh ./run.sh
-./install.sh --release --avx2
-./run.sh
+    style E fill:#1a1a2e,stroke:#e94560,stroke-width:2px,color:#fff
+    style J fill:#0f3460,stroke:#16213e,stroke-width:2px,color:#fff
 ```
 
-The server listens on port `8080`. For detailed setup paths, supported operating systems, CPU optimization flags, Docker usage, and authentication examples, use:
+---
 
-- [Getting Started](./docs/getting-started.md)
-- [Hosted Quick Start Docs](https://docs.endee.io/quick-start)
+## Quick Start (Local Setup)
 
-## Use Cases
+### 1. Clone & Install
+```bash
+git clone https://github.com/Vikash9546/endee.git
+cd endee/assignment
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-### RAG and AI Retrieval
+### 2. Launch Endee Database
+```bash
+docker compose up -d
+```
 
-Use Endee as the retrieval layer for question answering, chat assistants, copilots, and other RAG applications that need fast vector search with metadata-aware filtering.
-
-### Agentic AI and AI Agent Memory
-
-Use Endee as the long-term memory and context retrieval layer for AI agents built with frameworks like LangChain, CrewAI, AutoGen, and LlamaIndex. Store and retrieve past observations, tool outputs, conversation history, and domain knowledge mid-execution with low-latency filtered vector search, so your autonomous agents get the right context without stalling their reasoning loop.
-
-### Semantic Search
-
-Build semantic search experiences for documents, products, support content, and knowledge bases using vector similarity search instead of exact keyword-only matching.
-
-### Hybrid Search
-
-Combine dense retrieval, sparse vectors, and filtering to improve relevance for search workflows where both semantic understanding and term-level precision matter.
-
-### Recommendations and Matching
-
-Support recommendation, similarity matching, and nearest-neighbor retrieval workflows across text, embeddings, and other high-dimensional representations.
-
-## Features
-
-- **Vector search** for AI retrieval and semantic similarity workloads.
-- **Hybrid retrieval support** with sparse vector capabilities documented in [docs/sparse.md](./docs/sparse.md).
-- **Payload filtering** for structured retrieval logic documented in [docs/filter.md](./docs/filter.md).
-- **Backup APIs and flows** documented in [docs/backup-system.md](./docs/backup-system.md).
-- **Operational logging and instrumentation** documented in [docs/logs.md](./docs/logs.md) and [docs/mdbx-instrumentation.md](./docs/mdbx-instrumentation.md).
-- **CPU-targeted builds** for AVX2, AVX512, NEON, and SVE2 deployments.
-- **Docker deployment options** for local and server environments.
-
-## API and Clients
-
-Endee exposes an HTTP API for managing indexes and serving retrieval workloads. The current repo documentation and examples focus on running the server directly and calling its API endpoints.
-
-Current developer entry points:
-
-- [Getting Started](./docs/getting-started.md) for local build and run flows
-- [Hosted Docs](https://docs.endee.io/quick-start) for product documentation
-- [Release Notes 1.0.0](https://github.com/endee-io/endee/releases/tag/1.0.0) for recent platform changes
-
-## Docs and Links
-
-- [Getting Started](./docs/getting-started.md)
-- [Hosted Documentation](https://docs.endee.io/quick-start)
-- [Release Notes](https://github.com/endee-io/endee/releases/tag/1.0.0)
-- [Sparse Search](./docs/sparse.md)
-- [Filtering](./docs/filter.md)
-- [Backups](./docs/backup-system.md)
-
-## Community and Contact
-
-- Join the community on [Discord](https://discord.gg/5HFGqDZQE3)
-- Visit the website at [endee.io](https://endee.io/)
-- For trademark or branding permissions, contact [enterprise@endee.io](mailto:enterprise@endee.io)
-
-## Contributing
-
-We welcome contributions from the community to help make vector search faster and more accessible for everyone.
-
-- Submit pull requests for fixes, features, and improvements
-- Report bugs or performance issues through GitHub issues
-- Propose enhancements for search quality, performance, and deployment workflows
-
-## 🚀 Advanced AI Features (Assignment)
-
-The `/assignment` directory contains a high-performance demonstration of Endee's capabilities in RAG and Agentic workflows.
-
-### 🤖 AI Knowledge Assistant (Stateful RAG)
-A professional conversational interface for chatting with private documents.
-- **Handwriting OCR**: Automatically detects and extracts text from handwritten notes using Gemini Vision.
-- **Stateful Memory**: Remembers chat history for fluid, multi-turn follow-ups.
-- **Source Citations**: Every answer includes clickable references to the original document chunks.
-- **Grounding**: Guarantees zero-hallucination answers by sticking strictly to the ingested context.
-
-### 🕵️ Agentic AI Memory (Ghost-Protocol)
-An autonomous "Incident Response" agent that uses Endee as its long-term stateful memory.
-- **Autonomous Decision Engine**: Analyzes server alert signatures in real-time.
-- **Adaptive Memory**: Consults past incidents in Endee to decide between an **Auto-Fix** or **Escalation**.
-- **Continuous Learning**: Every incident resolution builds the agent's future intelligence.
+### 3. Run the Dashboard
+Ensure your `.env` file contains your `GEMINI_API_KEY`:
+```bash
+streamlit run app.py
+```
 
 ---
 
-## 🛠️ Getting Started with AI Modes
+## Cloud Deployment (The "Best" Way)
 
-1. **Navigate to the feature folder**:
-   ```bash
-   cd assignment
-   ```
+This project is optimized for deployment on **Streamlit Cloud** and **Railway**.
 
-2. **Configure Secrets**:
-   Create a `.env` file with your Gemini API key:
-   ```env
-   GEMINI_API_KEY=your_google_ai_key
-   ```
+### 1. Database (Railway.app)
+Deploy the `endeeio/endee-server:latest` image to Railway. 
+- Set `PORT` to `8080`.
+- Generate a public domain (e.g., `https://endee-server.up.railway.app`).
 
-3. **Run the Dashboard**:
-   ```bash
-   streamlit run app.py
-   ```
+### 2. Frontend (Streamlit Cloud)
+Connect your GitHub repo to Streamlit Cloud and add the following **Secrets**:
+```toml
+GEMINI_API_KEY = "your_gemini_key"
+NDD_URL = "https://your-railway-url.up.railway.app/api/v1"
+```
 
 ---
-© 2026 Endee AI. Built for high-speed intelligence.
 
-## License
+## 📁 Project Structure
 
-Endee is open source software licensed under the **Apache License 2.0**. See the [LICENSE](./LICENSE) file for full terms.
+- `app.py`: Main Dashboard (Management UI + Chat).
+- `ingest.py`: Pipeline for mass-vectorizing folder data.
+- `incident_agent.py`: CLI implementation of the Agentic Memory logic.
+- `query.py`: Direct CLI interface for RAG queries.
 
-## Trademark and Branding
-
-“Endee” and the Endee logo are trademarks of Endee Labs.
-
-The Apache License 2.0 does not grant permission to use the Endee name, logos, or branding in a way that suggests endorsement or affiliation.
-
-If you offer a hosted or managed service based on this software, you must use your own branding and avoid implying it is an official Endee service.
-
-## Third-Party Software
-
-This project includes or depends on third-party software components licensed under their respective open-source licenses. Use of those components is governed by their own license terms.
