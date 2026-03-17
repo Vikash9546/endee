@@ -4,7 +4,7 @@ A high-performance **Retrieval-Augmented Generation (RAG)** and **Autonomous Age
 
 This project demonstrates how to build a production-grade AI system using Endee as the "Long-Term Memory" to power deep document chat and autonomous incident response.
 
-*🌐 Live Demo*: (https://vikash9546-endee-assignmentapp-uhvshp.streamlit.app/)
+*🌐 Live Demo*: [Live](https://vikash9546-endee-assignmentapp-uhvshp.streamlit.app/)
 
 ---
 
