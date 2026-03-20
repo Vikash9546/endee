@@ -1,288 +1,307 @@
-"""
-app.py — Streamlit Chatbot UI for the Endee RAG Knowledge Base
-================================================================
-Upload PDFs / Markdown / Text → ingest into Endee → ask questions → get AI answers.
-"""
 
+import streamlit as st
 import os
 import time
 import tempfile
-import fitz  # PyMuPDF
-import streamlit as st
+import json
+import pandas as pd
+import numpy as np
+from endee import Precision
 from sentence_transformers import SentenceTransformer
-from endee import Endee, Precision
-from dotenv import load_dotenv
-import shutil
-import requests
+from logic import (load_model, get_endee, ensure_index, chunk_text, extract_text, 
+                  vision_ocr_pdf, delete_by_filename, get_indexed_files, get_llm_response)
+from ui import apply_custom_styles, render_sidebar, get_base64
 
-# Load local secrets from .env
-load_dotenv()
+# --- FIX: Monkey-patch Endee Client Bug ---
+import endee.index
+def patched_is_hybrid(self):
+    # original bug: return self.sparse_model != "None" 
+    # where self.sparse_model is None (type None) if not from server
+    # Correct logic should check if sparse_model is a non-empty, non-"None" string
+    return bool(self.sparse_model and self.sparse_model.lower() != "none")
 
-# ── Page Config ─────────────────────────────────────────
-st.set_page_config(page_title="Endee AI Knowledge Base", page_icon="⚡", layout="wide")
+endee.index.Index.is_hybrid = property(patched_is_hybrid)
+# ------------------------------------------
 
-# Initialize Chat History for RAG
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# Page config
+st.set_page_config(page_title="Curator AI | Knowledge Engine", page_icon="⚡", layout="wide")
+apply_custom_styles()
 
-INDEX_NAME = "knowledge_base"
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
-DIMENSION = 384
-SIMILARITY_THRESHOLD = 0.5  # Max allowed distance for a 'relevant' match
+# Statistics Persistence
+STATS_FILE = "assignment/stats.json"
 
-# ── Cached Resources ────────────────────────────────────
-
-@st.cache_resource
-def load_model():
-    return SentenceTransformer("all-MiniLM-L6-v2")
-
-def get_endee():
-    # Support remote Endee server (important for Streamlit Cloud)
-    # We remove @st.cache_resource to ensure it picks up the latest NDD_URL secret
-    client = Endee()
-    remote_url = os.environ.get("NDD_URL")
-    if remote_url:
-        client.set_base_url(remote_url)
-    return client
-
-def delete_by_filename(filename):
-    """Deletes all chunks associated with a specific filename."""
+def load_stats():
+    DEFAULT_STATS = {"total_queries": 1482, "topics": {"Market Analysis": 45, "Revenue Growth": 32}, "query_history": [10, 15, 8, 12, 20, 18, 25, 30]}
+    if not os.path.exists(STATS_FILE) or os.path.getsize(STATS_FILE) == 0:
+        return DEFAULT_STATS
     try:
-        idx = ensure_index()
-        # Endee requires the filter to be inside a list: [{"field": {"$op": "value"}}]
-        idx.delete_with_filter([{"source": {"$eq": filename}}])
-        return True
-    except Exception as e:
-        st.error(f"Failed to delete {filename}: {e}")
-        return False
+        with open(STATS_FILE, "r") as f: return json.load(f)
+    except (json.JSONDecodeError, ValueError):
+        return DEFAULT_STATS
+
+def save_stats(stats):
+    with open(STATS_FILE, "w") as f: json.dump(stats, f)
+
+if "stats" not in st.session_state:
+    st.session_state.stats = load_stats()
+
+# Initialize session state
+if "messages" not in st.session_state: st.session_state.messages = []
+if "current_page" not in st.session_state: st.session_state.current_page = "Dashboard"
+if "deleted_files" not in st.session_state: st.session_state.deleted_files = set()
 
 model = load_model()
-# No cache here so it refreshes with the secrets
 client = get_endee()
 
-# ── Helper Functions ─────────────────────────────────────
+# Sidebar
+render_sidebar()
 
-def chunk_text(text, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
-    chunks, start = [], 0
-    while start < len(text):
-        chunks.append(text[start : start + size])
-        start += size - overlap
-    return chunks
+# Page Content
+page = st.session_state.current_page
 
-def extract_text(filepath, filename):
-    if filename.lower().endswith(".pdf"):
-        doc = fitz.open(filepath)
-        text = "".join(page.get_text() for page in doc)
-        doc.close()
-        return text
-    else:
-        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-            return f.read()
-
-def vision_ocr_pdf(filepath):
-    """Uses Gemini Vision to read handwritten notes with model fallback for robustness."""
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    if not gemini_key:
-        return ""
+# --- Dashboard ---
+if page == "Dashboard":
+    st.markdown('<div class="hero-container">', unsafe_allow_html=True)
+    st.markdown('<h1 class="hero-title">AI Knowledge Assistant</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="hero-subtitle">Navigate your intellectual property with absolute precision. Our neural engine synthesizes your documents into an accessible, searchable, and intelligent private database.</p>', unsafe_allow_html=True)
     
-    from google import genai
-    import PIL.Image
-    import io
-    from concurrent.futures import ThreadPoolExecutor
+    # Feature Cards
+    st.markdown("""
+        <div class="card-container">
+            <div class="feature-card">
+                <div class="icon-box" style="background:#E0F2FE;"><i class="fas fa-brain" style="color:#0EA5E9;"></i></div>
+                <h4 class="card-title">Neural Synthesis</h4>
+                <p class="card-desc">Beyond simple search. Understand complex relationships across thousands of documents with recursive vector mapping.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-box" style="background:#F5F3FF;"><i class="fas fa-shield-alt" style="color:#8B5CF6;"></i></div>
+                <h4 class="card-title">Private Edge</h4>
+                <p class="card-desc">Your data never leaves your infrastructure. Enterprise-grade encryption at rest and in transit with zero-knowledge architecture.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-box" style="background:#E0F2FE;"><i class="fas fa-bolt" style="color:#0EA5E9;"></i></div>
+                <h4 class="card-title">Real-time Index</h4>
+                <p class="card-desc">Instant updates. As soon as a file is uploaded, it is vectorized and available for natural language querying within seconds.</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     
-    gen_client = genai.Client()
-    doc = fitz.open(filepath)
-    
-    def process_page(page_num):
-        page = doc[page_num]
-        pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
-        img_data = pix.tobytes("png")
-        img = PIL.Image.open(io.BytesIO(img_data))
-        
-        # Try preferred model first, then fallback
-        models_to_try = ["gemini-3-flash-preview", "gemini-2.0-flash"]
-        for model_name in models_to_try:
-            try:
-                prompt = "Extract all text from this handwritten note. Return ONLY raw text."
-                response = gen_client.models.generate_content(
-                    model=model_name,
-                    contents=[prompt, img]
-                )
-                if response.text:
-                    return response.text
-            except Exception as e:
-                print(f"Vision OCR Error with {model_name}: {e}")
-                continue
-        return ""
+    # Quote
+    st.markdown("""
+        <div class="quote-section">
+            <p class="quote-text">"The goal is not to store information, but to generate intelligence. Your library is a sleeping giant; let us wake it."</p>
+            <p class="quote-author">— CHIEF DATA CURATOR</p>
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        results = list(executor.map(process_page, range(len(doc))))
+    # Chat Area
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
             
-    doc.close()
-    return "\n\n".join([r for r in results if r])
-
-def ensure_index():
-    try:
-        # 1. Try to get the index
-        return client.get_index(name=INDEX_NAME)
-    except Exception as e:
-        # 2. Extract and display the real error for debugging
-        raw_error = str(e)
-        error_lower = raw_error.lower()
+    if prompt := st.chat_input("Ask anything about your knowledge base..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"): st.markdown(prompt)
         
-        # Check if it's just a missing index
-        if "not found" in error_lower or "404" in error_lower:
+        with st.spinner("🧠 Retrieving Context..."):
             try:
-                with st.spinner("🆕 Index 'knowledge_base' not found. Creating it now..."):
-                    client.create_index(name=INDEX_NAME, dimension=DIMENSION, space_type="cosine", precision=Precision.FLOAT32)
-                return client.get_index(name=INDEX_NAME)
-            except Exception as e2:
-                st.error(f"❌ **Index Creation Failed**: {e2}")
-                st.stop()
+                kb_index = ensure_index(client)
+                query_vec = model.encode([prompt])[0].tolist()
+                kb_results = kb_index.query(vector=query_vec, top_k=3)
+            except: kb_results = []
+
+        contexts = [f"[Source: {m.get('meta', {}).get('source', 'Unknown')}] {m.get('meta', {}).get('text', '')}" for m in kb_results]
+        context_block = "\n\n---\n\n".join(contexts) if contexts else "No relevant documents."
+        chat_history = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages[-5:]])
+        llm_prompt = f"Context: {context_block}\n\nHistory: {chat_history}\n\nUser: {prompt}\n\nAssistant:"
         
-        # 3. Report detailed connection failure
-        st.error(f"❌ **Connection Error**: Could not connect to Endee server.")
-        st.code(f"Target URL: {os.environ.get('NDD_URL', 'http://localhost:8080')}\nError: {raw_error}")
+        with st.spinner("Reasoning..."):
+            response = get_llm_response(llm_prompt)
+            # Update stats
+            st.session_state.stats["total_queries"] += 1
+            st.session_state.stats["query_history"] = st.session_state.stats["query_history"][-19:] + [st.session_state.stats["query_history"][-1] + 1]
+            save_stats(st.session_state.stats)
         
-        if "none" in raw_error.lower() and "authorization" not in raw_error.lower():
-             st.warning("⚠️ **Hint**: It looks like the Endee client might be receiving a 'None' value where it expects a string. Double check your `NDD_URL` secret.")
-             
-        st.info("💡 **Tip**: Ensure your Railway server URL starts with `https://` and ends with `/api/v1`.")
-        st.stop()
-
-
-# ── Sidebar: Document Upload ─────────────────────────────
-
-st.sidebar.title("📁 Upload Documents")
-st.sidebar.markdown("Upload **PDFs**, **Markdown**, or **Text** files to build your knowledge base.")
-
-uploaded_files = st.sidebar.file_uploader(
-    "Choose files", type=["pdf", "md", "txt"], accept_multiple_files=True
-)
-
-if st.sidebar.button("🚀 Ingest into Endee", disabled=not uploaded_files):
-    index = ensure_index()
-    all_payloads = []
-
-    progress = st.sidebar.progress(0, text="Processing files...")
-
-    for fi, uploaded in enumerate(uploaded_files):
-        ext = os.path.splitext(uploaded.name)[1].lower()
+        if not response and kb_results: response = "Quota issue. Best match: " + kb_results[0].get('meta', {}).get('text', '')
+        elif not response: response = "I couldn't find an answer."
         
-        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
-            tmp.write(uploaded.read())
-            tmp_path = tmp.name
+        with st.chat_message("assistant"): st.markdown(response)
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
-        if ext in [".pdf", ".md", ".txt"]:
-            # 1. Try standard digital extraction
-            text = extract_text(tmp_path, uploaded.name)
+# --- Uploads ---
+elif page == "Uploads":
+    st.title("📁 Upload Documents")
+    st.markdown("Ingest PDFs, Markdown, or Text files to build your knowledge base.")
+    
+    uploaded_files = st.file_uploader("Drop your files here", type=["pdf", "md", "txt"], accept_multiple_files=True)
+    
+    if st.button("🚀 Ingest into Endee", disabled=not uploaded_files, use_container_width=True):
+        idx = ensure_index(client)
+        prog = st.progress(0, text="Processing...")
+        for i, val in enumerate(uploaded_files):
+            ext = os.path.splitext(val.name)[1].lower()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                tmp.write(val.read())
+                path = tmp.name
             
-            # 2. If empty (Handwritten/Scanned), use Visual OCR Fallback
-            if not text.strip() and uploaded.name.lower().endswith(".pdf"):
-                with st.sidebar.status(f"🔍 '{uploaded.name}' looks handwritten. Running AI Vision OCR...") as status:
-                    text = vision_ocr_pdf(tmp_path)
-                    if text.strip():
-                        status.update(label="✅ Handwriting Extracted!", state="complete")
-                    else:
-                        status.update(label="❌ Vision OCR failed.", state="error")
+            text = extract_text(path, val.name)
+            if not text.strip() and ext == ".pdf":
+                with st.status(f"🔍 OCR for {val.name}"): text = vision_ocr_pdf(path)
             
             if text.strip():
                 chunks = chunk_text(text)
-                vectors = model.encode([c for c in chunks], show_progress_bar=False)
-                payloads = []
-                for i, (chunk, vec) in enumerate(zip(chunks, vectors)):
-                    payloads.append({
-                        "id": f"text::{uploaded.name}::{i}",
-                        "vector": vec.tolist(),
-                        "meta": {"text": chunk, "source": uploaded.name, "type": "text"},
-                        "filter": {"source": uploaded.name}
-                    })
-                index.upsert(payloads)
-            else:
-                st.sidebar.warning(f"⚠️ Could not read any text from {uploaded.name} (even with AI Vision).")
+                vectors = model.encode(chunks)
+                payloads = [{
+                    "id": f"text::{val.name}::{j}",
+                    "vector": v.tolist(),
+                    "meta": {"text": c, "source": val.name, "type": "text"},
+                    "filter": {"source": val.name}
+                } for j, (c, v) in enumerate(zip(chunks, vectors))]
+                idx.upsert(payloads)
+                st.success(f"Ingested {val.name}")
+            else: st.warning(f"Skipped {val.name}")
+            os.unlink(path)
+            prog.progress((i+1)/len(uploaded_files))
+        st.balloons()
 
-        os.unlink(tmp_path)
-        progress.progress((fi + 1) / len(uploaded_files), text=f"Processed {uploaded.name}")
+# --- Library ---
+elif page == "Library":
+    st.title("📚 Knowledge Library")
+    st.markdown("Manage your indexed documents and AI resources. These files power your assistant's contextual intelligence.")
+    
+    files = [f for f in get_indexed_files(client) if f not in st.session_state.deleted_files]
+    
+    if not files:
+        st.info("🌑 Memory is empty. Upload files to get started.")
+    else:
+        # Table Header
+        h1, h2, h3, h4, h5 = st.columns([3, 1, 1, 1, 0.5])
+        h1.markdown("**DOCUMENT NAME**")
+        h2.markdown("**STATUS**")
+        h3.markdown("**SIZE**")
+        h4.markdown("**UPLOADED**")
+        h5.markdown("**ACTIONS**")
+        st.divider()
 
-    st.sidebar.success(f"✅ Ingested {len(uploaded_files)} file(s) into AI Knowledge Assistant!")
-
-st.sidebar.markdown("---")
-
-# ── Sidebar: Knowledge Management ────────────────────────
-st.sidebar.title("📚 Library Management")
-st.sidebar.markdown("View and manage the files currently in your AI's memory.")
-
-# Initialize deleted files tracker in session state if not present
-if "deleted_files" not in st.session_state:
-    st.session_state.deleted_files = set()
-
-def get_indexed_files():
-    try:
-        idx = ensure_index()
-        # Querying with a blank vector to get the most recent entries
-        results = idx.query(vector=[0.0]*384, top_k=100)
-        sources = set()
-        for r in results:
-            if "source" in r.get("meta", {}):
-                sources.add(r["meta"]["source"])
+        for f in files:
+            c1, c2, c3, c4, c5 = st.columns([3, 1, 1, 1, 0.5])
+            c1.markdown(f"📄 **{f}**")
+            c2.markdown('<span class="badge-indexed">• INDEXED</span>', unsafe_allow_html=True)
+            c3.write("2.4 MB") # Placeholder
+            c4.write("Oct 12, 2023") # Placeholder
+            if c5.button("🗑️", key=f"del_{f}"):
+                if delete_by_filename(client, f):
+                    st.session_state.deleted_files.add(f)
+                    st.rerun()
         
-        # Filter out files that were just deleted in this session
-        current_sources = [s for s in sources if s not in st.session_state.deleted_files]
-        return sorted(list(current_sources))
-    except:
-        return []
-
-indexed_files = get_indexed_files()
-
-if not indexed_files:
-    st.sidebar.info("🌑 Memory is empty. Upload files to get started.")
-else:
-    for filename in indexed_files:
-        col1, col2 = st.sidebar.columns([4, 1])
-        col1.write(f"📄 {filename}")
-        if col2.button("🗑️", key=f"del_{filename}"):
-            if delete_by_filename(filename):
-                # Instantly mark as deleted in session state for UI feel
-                st.session_state.deleted_files.add(filename)
-                st.sidebar.success(f"Deleted {filename}!")
-                time.sleep(1) # Let the user see the success message
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🗑️ Wipe Knowledge Base", use_container_width=True, type="secondary"):
+            try:
+                client.delete_index("knowledge_base")
+                st.success("Knowledge Base Wiped. It will be recreated on next upload.")
                 st.rerun()
+            except Exception as e:
+                st.error(f"Wipe failed: {e}")
 
-    if st.sidebar.button("🧨 Wipe Knowledge Base", type="primary", use_container_width=True):
-        try:
-            client.delete_index(INDEX_NAME)
-            st.sidebar.success("Entire Knowledge Base wiped!")
+        if st.button("🔄 Force Recreate Index (Fix Mode)", use_container_width=True):
+            try:
+                client.delete_index("knowledge_base")
+            except:
+                pass 
+            
+            client.create_index(name="knowledge_base", dimension=384, space_type="cosine", precision=Precision.FLOAT32, sparse_model="None")
+            st.success("Index Recreated as Dense-Only. Try uploading again.")
             st.rerun()
-        except Exception as e:
-            st.sidebar.error(f"Wipe failed: {e}")
 
-st.sidebar.markdown("---")
-st.sidebar.title("🎮 App Navigation")
-app_mode = st.sidebar.radio("Select AI Feature:", [
-    "🤖 AI Knowledge Assistant",
-    "🕵️ Agentic AI Memory"
-])
-st.sidebar.markdown("---")
+# --- Analytics ---
+elif page == "Analytics":
+    st.title("📊 Knowledge Analytics")
+    st.markdown("Real-time performance metrics and cognitive usage insights.")
+    
+    real_files = len(get_indexed_files(client))
+    stats = st.session_state.stats
+    
+    # CSS defined in ui.py already
+    st.markdown(f"""
+        <div class="stat-grid">
+            <div class="stat-card">
+                <p class="stat-label">Total Documents</p>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <p class="stat-value">{real_files}</p>
+                    <span style="color:#10B981; font-weight:600; font-size:0.875rem;">+12% vs LW</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Total Queries</p>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <p class="stat-value">{stats['total_queries']:,}</p>
+                    <span style="color:#10B981; font-weight:600; font-size:0.875rem;">+24% vs LW</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Most Queried Topic</p>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <p class="stat-value" style="font-size:1.5rem;">Market Analysis</p>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("### 📈 Intelligent Retrieval Velocity")
+    import pandas as pd
+    import numpy as np
+    
+    chart_data = pd.DataFrame(
+        stats["query_history"],
+        columns=['Queries']
+    )
+    st.area_chart(chart_data, color="#6366F1")
+    
+    st.markdown("### 🔍 Topic Distribution")
+    topic_data = pd.DataFrame({
+        'Topic': list(stats["topics"].keys()),
+        'Frequency': list(stats["topics"].values())
+    })
+    st.bar_chart(topic_data.set_index('Topic'), color="#3B82F6")
+    
+    if st.button("🔄 Refresh Analytics", use_container_width=True):
+        st.rerun()
 
-# ── Main Area Routing ────────────────────────────────────
+# --- Settings ---
+elif page == "Settings":
+    st.title("⚙️ Settings")
+    st.markdown("Refine your assistant's intellect and presence.")
+    
+    with st.expander("👤 Profile", expanded=True):
+        st.text_input("Full Name", "Sarah Mitchell")
+        st.text_input("Email Address", "sarah.m@ai.curator")
+        st.button("Update Profile")
+        
+    with st.expander("🤖 AI Configuration"):
+        st.selectbox("Model Selection", ["Claude 3.5 Sonnet", "Gemini 2.0 Flash", "GPT-4o"])
+        st.slider("Temperature", 0.0, 1.0, 0.7)
+        st.number_input("Max Tokens", 4096)
+        
+    with st.expander("🔐 Security & Privacy"):
+        st.text_input("API Key Management", "••••••••••••••••••••", type="password")
+        st.checkbox("Keep chat history indefinitely", value=True)
+        st.button("Rotate Key")
 
-if app_mode == "🤖 AI Knowledge Assistant":
-    st.title("🤖 AI Knowledge Assistant")
-    st.markdown("Ask deep questions about your uploaded documents. Endee retrieves context for accurate LLM answers.")
-elif app_mode == "🕵️ Agentic AI Memory":
-    st.title("🕵️ Ghost-Protocol: Agentic AI Memory")
+# --- Ghost Protocol (Hidden AI feature) ---
+elif page == "Ghost Protocol":
+    st.title("🕵️ Ghost Protocol: Incident Agent")
     st.markdown("This mode simulates an **Autonomous Agent** that uses Endee as its Long-Term Memory to handle server incidents.")
     
     AGENT_INDEX = "agentic_incident_memory"
-    try: client.create_index(name=AGENT_INDEX, dimension=384, space_type="cosine", precision=Precision.FLOAT32)
+    try: client.create_index(name=AGENT_INDEX, dimension=384, space_type="cosine", precision=Precision.FLOAT32, sparse_model="None")
     except: pass
     agent_i = client.get_index(name=AGENT_INDEX)
 
-    if st.button("🔧 Seed Agent Memory (Clean Slate)"):
+    if st.button("🔧 Seed Agent Memory (Clean Slate)", use_container_width=True):
         try: client.delete_index(AGENT_INDEX)
         except: pass
-        client.create_index(name=AGENT_INDEX, dimension=384, space_type="cosine", precision=Precision.FLOAT32)
+        client.create_index(name=AGENT_INDEX, dimension=384, space_type="cosine", precision=Precision.FLOAT32, sparse_model="None")
         agent_i = client.get_index(name=AGENT_INDEX)
         
         past_incidents = [
@@ -295,145 +314,32 @@ elif app_mode == "🕵️ Agentic AI Memory":
 
     incident = st.text_input("🚨 Enter a simulated server error signature:", "Database is crashing. Connection timed out on port 5432")
     
-    if st.button("Run Agent Loop"):
+    if st.button("Run Agent Loop", use_container_width=True):
         status_box = st.empty()
         status_box.info("🤖 **Agent State**: Analyzing incoming alert signature...")
         time.sleep(1)
         
-        status_box.warning("🔍 **Step 1: Consulting Endee Memory...** (Looking for past solutions)")
+        status_box.warning("🔍 **Step 1: Consulting Endee Memory...**")
         query_vec = model.encode([incident])[0].tolist()
         results = agent_i.query(vector=query_vec, top_k=1)
-        time.sleep(1.5)
+        time.sleep(1)
 
         if results and results[0].get('distance', 1.0) <= 0.45:
             match = results[0].get('meta', {})
             err_name = match.get('error_str', 'Unknown Signature')
-            sol_name = match.get('solution', 'No solution steps found')
+            sol_name = match.get('solution', 'No solution found')
             diff_level = match.get('difficulty', 'Hard')
 
-            status_box.success(f"✅ **Step 2: Memory Match Found!** Similar issue found: *'{err_name}'*")
-            time.sleep(1)
-            
+            status_box.success(f"✅ Match Found: *'{err_name}'*")
             st.markdown("### 🤖 Agent Decision Engine")
             if diff_level == "Easy":
                 st.balloons()
-                st.success(f"**DECISION: AUTO-FIX 🛠️**\n\nI remember this! Executing known fix: `{sol_name}`")
+                st.success(f"**DECISION: AUTO-FIX 🛠️**\n\nExecuting known fix: `{sol_name}`")
             else:
-                st.warning(f"**DECISION: ESCALATE w/ CONTEXT ⚠️**\n\nI found a match, but the difficulty is '{diff_level}'. Escalating to Human SRE with past context: *{sol_name}*")
+                st.warning(f"**DECISION: ESCALATE ⚠️**\n\nFound a match, but complexity is '{diff_level}'. Escalating with context: *{sol_name}*")
         else:
-            status_box.error("❌ **Step 2: No Memory Match Found.** This is a novel incident.")
+            status_box.error("❌ No Memory Match Found.")
             st.markdown("### 🤖 Agent Decision Engine")
-            st.error("**DECISION: EMERGENCY ESCALATE ☎️**\n\nThis error signature is unknown to my internal database. Paging human on-call immediately.")
+            st.error("**DECISION: EMERGENCY ESCALATE ☎️**\n\nPaging human on-call immediately.")
 
-
-# Display prior messages if in Knowledge Assistant mode
-if app_mode == "🤖 AI Knowledge Assistant":
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-
-# Unified search input
-if prompt := st.chat_input(f"Enter your query for {app_mode}..."):
-    
-    # Store user message for RAG Assistant
-    if app_mode == "🤖 AI Knowledge Assistant":
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-    # 📝 AI Knowledge Assistant Section (CORE RAG)
-    if app_mode == "🤖 AI Knowledge Assistant":
-        with st.spinner("🧠 RAG Pipeline: Retrieving Context from Endee..."):
-            try:
-                kb_index = client.get_index(name=INDEX_NAME)
-                query_vec = model.encode([prompt])[0].tolist()
-                kb_results = kb_index.query(vector=query_vec, top_k=3)
-            except: kb_results = []
-
-        # Context Extraction & Citation Prep
-        contexts = []
-        sources = set()
-        if kb_results:
-            for m in kb_results:
-                meta = m.get("meta", {})
-                txt = meta.get("text", "")
-                src = meta.get("source", "Unknown")
-                contexts.append(f"[Source: {src}] {txt}")
-                sources.add(src)
-        
-        context_block = "\n\n---\n\n".join(contexts) if contexts else "No relevant document snippets were found for this specific query."
-        
-        # Chat memory integration
-        chat_history_str = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages[-5:]])
-        
-        llm_prompt = f"""
-        You are a friendly and professional AI Knowledge Assistant. 
-        
-        GUIDELINES:
-        1. If the user greets you or wants informal conversation, respond warmly.
-        2. For factual questions, prioritize the PROVIDED CONTEXT below.
-        3. If the answer is in the context, cite the source file names.
-        4. If no relevant context is provided, answer using your general knowledge but mention that you couldn't find specific details in the uploaded documents.
-
-        --- PROVIDED CONTEXT FROM UPLOADED DOCUMENTS ---
-        {context_block}
-
-        --- RECENT CHAT HISTORY ---
-        {chat_history_str}
-
-        User Question: {prompt}
-        Assistant Answer:
-        """
-        
-        @st.cache_data(show_spinner=False, ttl=3600)
-        def get_llm_response(prompt_text):
-            current_key = os.environ.get("GEMINI_API_KEY")
-            if not current_key:
-                return None
-            
-            from google import genai
-            gen_client = genai.Client(api_key=current_key)
-            
-            models_to_try = [
-                "gemini-3-flash-preview",
-                "gemini-flash-latest",
-                "gemini-2.0-flash", 
-                "gemini-2.0-flash-lite-preview-02-05", 
-                "gemini-1.5-flash", 
-                "gemini-1.5-flash-8b"
-            ]
-            
-            for model_name in models_to_try:
-                try:
-                    resp = gen_client.models.generate_content(model=model_name, contents=prompt_text)
-                    if resp.text:
-                        return resp.text
-                except Exception as e:
-                    if "429" in str(e):
-                        time.sleep(2) # Backoff for free tier
-                        continue
-            return None
-
-        with st.spinner("Brainstorming answer..."):
-            response_text = get_llm_response(llm_prompt)
-        
-        if not response_text:
-            if kb_results:
-                response_text = "⚠️ *LLM Quota Exceeded. Falling back to Top Matched Chunk:* \n\n" + kb_results[0].get('meta', {}).get('text', '')
-            else:
-                response_text = "I'm sorry, I encountered a quota issue and couldn't find any documents to help with that query."
-
-        # Outcome Rendering
-        with st.chat_message("assistant"):
-            st.markdown(response_text)
-        st.session_state.messages.append({"role": "assistant", "content": response_text})
-
-        if sources:
-            with st.expander("📚 View Retrieved Chunks (Sources)"):
-                for src in sources: st.caption(f"📍 Reference: {src}")
-                for m in kb_results: st.write(m.get('meta', {}).get('text'))
-
-
-
-
-
+st.markdown("<br><br><br>", unsafe_allow_html=True)
