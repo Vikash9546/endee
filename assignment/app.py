@@ -273,11 +273,6 @@ elif page == "Settings":
     st.title("⚙️ Settings")
     st.markdown("Refine your assistant's intellect and presence.")
     
-    with st.expander("👤 Profile", expanded=True):
-        st.text_input("Full Name", "Sarah Mitchell")
-        st.text_input("Email Address", "sarah.m@ai.curator")
-        st.button("Update Profile")
-        
     with st.expander("🤖 AI Configuration"):
         st.selectbox("Model Selection", ["Claude 3.5 Sonnet", "Gemini 2.0 Flash", "GPT-4o"])
         st.slider("Temperature", 0.0, 1.0, 0.7)
