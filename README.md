@@ -1,4 +1,4 @@
-# ⚡ Curator AI: Enterprise Knowledge Engine & Analytics
+# ⚡ Curator AI: Knowledge Engine
 
 A premium **Retrieval-Augmented Generation (RAG)** platform built on **Endee**, a blazingly fast open-source vector database. Curator AI transforms static documents into a dynamic, searchable, and intelligent private database with a state-of-the-art UI/UX.
 
