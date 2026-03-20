@@ -282,8 +282,9 @@ def apply_custom_styles():
     """, unsafe_allow_html=True)
 
 def render_sidebar():
-    logo_path = "/Users/vikashkumar/.gemini/antigravity/brain/f057ec2d-8150-4764-b5df-9921ea352783/curator_ai_logo_1773991934196.png"
-    avatar_path = "/Users/vikashkumar/.gemini/antigravity/brain/f057ec2d-8150-4764-b5df-9921ea352783/sarah_mitchell_avatar_1773992155891.png"
+    # Use relative paths for cloud compatibility
+    logo_path = "assignment/assets/logo.png"
+    avatar_path = "assignment/assets/avatar.png"
 
     with st.sidebar:
         st.markdown(f"""
