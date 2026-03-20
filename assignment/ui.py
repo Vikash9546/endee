@@ -317,9 +317,6 @@ def render_sidebar():
                 
         # Existing Incident Agent (Ghost Protocol) hidden or separate feature
         st.markdown("<br><hr><br>", unsafe_allow_html=True)
-        if st.button("🕵️ Ghost Protocol", use_container_width=True):
-            st.session_state.current_page = "Ghost Protocol"
-            st.rerun()
 
         # Profile at bottom
         st.markdown(f"""

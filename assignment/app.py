@@ -288,58 +288,5 @@ elif page == "Settings":
         st.checkbox("Keep chat history indefinitely", value=True)
         st.button("Rotate Key")
 
-# --- Ghost Protocol (Hidden AI feature) ---
-elif page == "Ghost Protocol":
-    st.title("🕵️ Ghost Protocol: Incident Agent")
-    st.markdown("This mode simulates an **Autonomous Agent** that uses Endee as its Long-Term Memory to handle server incidents.")
-    
-    AGENT_INDEX = "agentic_incident_memory"
-    try: client.create_index(name=AGENT_INDEX, dimension=384, space_type="cosine", precision=Precision.FLOAT32, sparse_model="None")
-    except: pass
-    agent_i = client.get_index(name=AGENT_INDEX)
-
-    if st.button("🔧 Seed Agent Memory (Clean Slate)", use_container_width=True):
-        try: client.delete_index(AGENT_INDEX)
-        except: pass
-        client.create_index(name=AGENT_INDEX, dimension=384, space_type="cosine", precision=Precision.FLOAT32, sparse_model="None")
-        agent_i = client.get_index(name=AGENT_INDEX)
-        
-        past_incidents = [
-            {"error_str": "Postgres Connection Refused 5432", "solution": "Restarted pg_ctl and increased max_connections.", "difficulty": "Easy"},
-            {"error_str": "OOMKilled: Pod memory limit", "solution": "Memory leak detected. Requires senior SRE profile.", "difficulty": "Hard"},
-            {"error_str": "AWS S3 Access Denied 403", "solution": "IAM role restored via Terraform.", "difficulty": "Easy"}
-        ]
-        agent_i.upsert([{"id": f"inc_{i}", "vector": model.encode([p["error_str"]])[0].tolist(), "meta": p} for i, p in enumerate(past_incidents)])
-        st.success("Agent Memory Reset & Seeded!")
-
-    incident = st.text_input("🚨 Enter a simulated server error signature:", "Database is crashing. Connection timed out on port 5432")
-    
-    if st.button("Run Agent Loop", use_container_width=True):
-        status_box = st.empty()
-        status_box.info("🤖 **Agent State**: Analyzing incoming alert signature...")
-        time.sleep(1)
-        
-        status_box.warning("🔍 **Step 1: Consulting Endee Memory...**")
-        query_vec = model.encode([incident])[0].tolist()
-        results = agent_i.query(vector=query_vec, top_k=1)
-        time.sleep(1)
-
-        if results and results[0].get('distance', 1.0) <= 0.45:
-            match = results[0].get('meta', {})
-            err_name = match.get('error_str', 'Unknown Signature')
-            sol_name = match.get('solution', 'No solution found')
-            diff_level = match.get('difficulty', 'Hard')
-
-            status_box.success(f"✅ Match Found: *'{err_name}'*")
-            st.markdown("### 🤖 Agent Decision Engine")
-            if diff_level == "Easy":
-                st.balloons()
-                st.success(f"**DECISION: AUTO-FIX 🛠️**\n\nExecuting known fix: `{sol_name}`")
-            else:
-                st.warning(f"**DECISION: ESCALATE ⚠️**\n\nFound a match, but complexity is '{diff_level}'. Escalating with context: *{sol_name}*")
-        else:
-            status_box.error("❌ No Memory Match Found.")
-            st.markdown("### 🤖 Agent Decision Engine")
-            st.error("**DECISION: EMERGENCY ESCALATE ☎️**\n\nPaging human on-call immediately.")
 
 st.markdown("<br><br><br>", unsafe_allow_html=True)
