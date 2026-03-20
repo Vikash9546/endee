@@ -231,33 +231,8 @@ def apply_custom_styles():
             }
             .stButton > button { color: #9CA3AF !important; }
             
-            /* Profile Dark */
-            .sidebar-profile { border-top-color: var(--border-dark) !important; }
-            .profile-name { color: var(--text-dark) !important; }
-            .profile-role { color: #6B7280; }
         }
 
-        /* Profile Bottom Sidebar */
-        .sidebar-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 2rem 1rem 1rem 1rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border-light);
-        }
-
-        .avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
-            object-fit: cover;
-            border: 2px solid white;
-            box-shadow: var(--shadow-md);
-        }
-
-        .profile-name { font-weight: 700; color: var(--text-light); margin: 0; }
-        .profile-role { font-size: 0.75rem; color: #64748B; margin: 0; }
 
         .stat-card {
             background: white !important;
@@ -284,7 +259,6 @@ def apply_custom_styles():
 def render_sidebar():
     # Use relative paths for cloud compatibility
     logo_path = "assignment/assets/logo.png"
-    avatar_path = "assignment/assets/avatar.png"
 
     with st.sidebar:
         st.markdown(f"""
@@ -318,16 +292,6 @@ def render_sidebar():
         # Existing Incident Agent (Ghost Protocol) hidden or separate feature
         st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-        # Profile at bottom
-        st.markdown(f"""
-            <div class="sidebar-profile">
-                <img src="data:image/png;base64,{get_base64(avatar_path)}" class="avatar">
-                <div>
-                    <p class="profile-name">Sarah Mitchell</p>
-                    <p class="profile-role">Admin Access</p>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
 
 import base64
 def get_base64(path):
