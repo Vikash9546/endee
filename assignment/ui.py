@@ -1,6 +1,7 @@
 
 import streamlit as st
 import os
+import base64
 
 def apply_custom_styles():
     st.markdown("""
@@ -230,9 +231,7 @@ def apply_custom_styles():
                 background-color: rgba(255, 255, 255, 0.05) !important;
             }
             .stButton > button { color: #9CA3AF !important; }
-            
         }
-
 
         .stat-card {
             background: white !important;
@@ -256,14 +255,25 @@ def apply_custom_styles():
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     """, unsafe_allow_html=True)
 
+def get_base64(path):
+    try:
+        with open(path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode()
+    except Exception as e:
+        return ""
+
 def render_sidebar():
-    # Use relative paths for cloud compatibility
-    logo_path = "assignment/assets/logo.png"
+    # Use robust relative-to-script paths for cloud/environment compatibility
+    curr_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(curr_dir, "assets", "logo.png")
 
     with st.sidebar:
+        logo_b64 = get_base64(logo_path)
+        logo_html = f'<img src="data:image/png;base64,{logo_b64}" width="40" style="border-radius: 8px;">' if logo_b64 else ""
+        
         st.markdown(f"""
             <div class="brand-container">
-                <img src="data:image/png;base64,{get_base64(logo_path)}" width="40" style="border-radius: 8px;">
+                {logo_html}
                 <div>
                     <h3 class="brand-name">Curator AI</h3>
                     <p class="brand-tagline">Knowledge Engine</p>
@@ -284,16 +294,8 @@ def render_sidebar():
             st.session_state.current_page = "Dashboard"
             
         for page, icon in pages.items():
-            is_active = "active" if st.session_state.current_page == page else ""
             if st.button(f"{page}", key=f"nav_{page}", use_container_width=True):
                 st.session_state.current_page = page
                 st.rerun()
                 
-        # Existing Incident Agent (Ghost Protocol) hidden or separate feature
         st.markdown("<br><hr><br>", unsafe_allow_html=True)
-
-
-import base64
-def get_base64(path):
-    with open(path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode()
