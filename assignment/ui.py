@@ -8,23 +8,28 @@ def apply_custom_styles():
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --primary: #6366F1;
-            --primary-glow: rgba(99, 102, 241, 0.15);
-            --bg-light: #F8FAFC;
+            --primary: #4F46E5;
+            --primary-glow: rgba(79, 70, 229, 0.1);
+            --bg-light: #FFFFFF;
             --bg-dark: #0B0F19;
-            --card-light: rgba(255, 255, 255, 0.8);
+            --card-light: #FFFFFF;
             --card-dark: rgba(30, 41, 59, 0.7);
-            --sidebar-light: #FFFFFF;
+            --sidebar-light: #F9FAFB;
             --sidebar-dark: #0F172A;
-            --text-light: #1E293B;
+            --text-light: #111827;
             --text-dark: #F8FAFC;
-            --border-light: rgba(226, 232, 240, 0.8);
+            --border-light: #E5E7EB;
             --border-dark: rgba(51, 65, 85, 0.5);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
 
         /* Base Application Styles */
         .stApp {
-            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%) !important;
+            background-color: var(--bg-light) !important;
+            background-image: radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.03) 0, transparent 50%), 
+                              radial-gradient(at 50% 0%, rgba(79, 70, 229, 0.05) 0, transparent 50%) !important;
             font-family: 'Plus Jakarta Sans', sans-serif !important;
         }
 
@@ -64,14 +69,6 @@ def apply_custom_styles():
             transform: translateX(4px);
         }
 
-        /* Active State Simulation (based on session state handled in logic) */
-        div[data-testid="stSidebar"] .stButton button:active,
-        div[data-testid="stSidebar"] .stButton button:focus {
-            background-color: var(--primary-glow) !important;
-            color: var(--primary) !important;
-            box-shadow: none !important;
-        }
-
         /* Brand Styling */
         .brand-container {
             padding: 0 1.5rem 2.5rem 1.5rem;
@@ -83,9 +80,7 @@ def apply_custom_styles():
         .brand-name {
             font-weight: 800;
             font-size: 1.4rem;
-            background: linear-gradient(135deg, #1E293B 0%, #475569 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #111827;
             margin: 0;
             letter-spacing: -0.01em;
         }
@@ -99,7 +94,7 @@ def apply_custom_styles():
             letter-spacing: 0.05em;
         }
 
-        /* Hero & Content Containers */
+        /* Hero */
         .hero-container {
             text-align: center;
             padding: 6rem 1rem 4rem 1rem;
@@ -110,7 +105,7 @@ def apply_custom_styles():
         .hero-title {
             font-size: 4rem;
             font-weight: 800;
-            color: #0F172A;
+            color: var(--text-light);
             margin-bottom: 1.5rem;
             letter-spacing: -0.04em;
             line-height: 1.1;
@@ -118,15 +113,12 @@ def apply_custom_styles():
 
         .hero-subtitle {
             font-size: 1.25rem;
-            color: #475569;
+            color: #4B5563;
             line-height: 1.6;
             margin-bottom: 3.5rem;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
         }
 
-        /* Premium Glass Cards */
+        /* Premium White Cards */
         .card-container {
             display: flex;
             gap: 24px;
@@ -138,10 +130,8 @@ def apply_custom_styles():
 
         .feature-card {
             background: var(--card-light);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             padding: 2.5rem;
-            border-radius: 28px;
+            border-radius: 24px;
             border: 1px solid var(--border-light);
             flex: 1;
             min-width: 280px;
@@ -149,11 +139,12 @@ def apply_custom_styles():
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            box-shadow: var(--shadow-sm);
         }
 
         .feature-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+            box-shadow: var(--shadow-lg);
             border-color: var(--primary);
         }
 
@@ -171,33 +162,33 @@ def apply_custom_styles():
         .card-title {
             font-size: 1.4rem;
             font-weight: 800;
-            color: #0F172A;
+            color: var(--text-light);
             margin-bottom: 1rem;
             letter-spacing: -0.02em;
         }
 
         .card-desc {
             font-size: 0.95rem;
-            color: #64748B;
+            color: #6B7280;
             line-height: 1.6;
         }
 
-        /* Quote Section */
+        /* Quote */
         .quote-section {
-            background: #EFF6FF;
+            background: #F5F7FF;
             padding: 3.5rem;
             border-radius: 32px;
             text-align: center;
             max-width: 950px;
             margin: 0 auto 5rem auto;
-            border: 1px solid rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(79, 70, 229, 0.08);
         }
 
         .quote-text {
             font-size: 1.8rem;
             font-weight: 600;
             line-height: 1.4;
-            color: #1E3A8A;
+            color: #1E1B4B;
             margin-bottom: 2rem;
             letter-spacing: -0.01em;
         }
@@ -207,10 +198,10 @@ def apply_custom_styles():
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.2em;
-            color: #3B82F6;
+            color: var(--primary);
         }
 
-        /* Dark Mode Handling */
+        /* Dark Mode Override */
         @media (prefers-color-scheme: dark) {
             .stApp {
                 background: linear-gradient(135deg, var(--bg-dark) 0%, #111827 100%) !important;
@@ -222,37 +213,28 @@ def apply_custom_styles():
             .feature-card {
                 background: var(--card-dark);
                 border-color: var(--border-dark);
+                box-shadow: none;
             }
             .card-title, .hero-title, .brand-name {
                 color: var(--text-dark) !important;
-                background: none;
-                -webkit-text-fill-color: initial;
             }
             .hero-subtitle, .card-desc, .brand-tagline {
-                color: #94A3B8;
+                color: #9CA3AF;
             }
             .quote-section {
-                background: rgba(30, 58, 138, 0.2);
-                border-color: rgba(30, 58, 138, 0.4);
+                background: rgba(30, 58, 138, 0.1);
+                border-color: rgba(30, 58, 138, 0.2);
             }
             .quote-text { color: #BFDBFE; }
             .stButton > button:hover {
                 background-color: rgba(255, 255, 255, 0.05) !important;
             }
-            .stButton > button { color: #94A3B8 !important; }
+            .stButton > button { color: #9CA3AF !important; }
             
             /* Profile Dark */
             .sidebar-profile { border-top-color: var(--border-dark) !important; }
             .profile-name { color: var(--text-dark) !important; }
-            .profile-role { color: #64748B; }
-        }
-
-        /* Custom Table */
-        .custom-table {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 20px;
-            border: 1px solid var(--border-light);
-            margin-top: 1rem;
+            .profile-role { color: #6B7280; }
         }
 
         /* Profile Bottom Sidebar */
@@ -271,11 +253,29 @@ def apply_custom_styles():
             border-radius: 14px;
             object-fit: cover;
             border: 2px solid white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-md);
         }
 
-        .profile-name { font-weight: 700; color: #1E293B; margin: 0; }
+        .profile-name { font-weight: 700; color: var(--text-light); margin: 0; }
         .profile-role { font-size: 0.75rem; color: #64748B; margin: 0; }
+
+        .stat-card {
+            background: white !important;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .stat-card {
+                background: var(--card-dark) !important;
+                border-color: var(--border-dark);
+                box-shadow: none;
+            }
+            .stat-label { color: #9CA3AF !important; }
+            .stat-value { color: var(--text-dark) !important; }
+        }
 
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
