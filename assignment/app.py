@@ -24,7 +24,7 @@ endee.index.Index.is_hybrid = property(patched_is_hybrid)
 # ------------------------------------------
 
 # Page config
-st.set_page_config(page_title="Curator AI | Knowledge Engine", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Curator AI | Knowledge Engine", layout="wide")
 apply_custom_styles()
 
 # Statistics Persistence
@@ -104,7 +104,7 @@ if page == "Dashboard":
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.markdown(prompt)
         
-        with st.spinner("🧠 Retrieving Context..."):
+        with st.spinner("Retrieving Context..."):
             try:
                 kb_index = ensure_index(client)
                 query_vec = model.encode([prompt])[0].tolist()
@@ -131,12 +131,12 @@ if page == "Dashboard":
 
 # --- Uploads ---
 elif page == "Uploads":
-    st.title("📁 Upload Documents")
+    st.title("Upload Documents")
     st.markdown("Ingest PDFs, Markdown, or Text files to build your knowledge base.")
     
     uploaded_files = st.file_uploader("Drop your files here", type=["pdf", "md", "txt"], accept_multiple_files=True)
     
-    if st.button("🚀 Ingest into Endee", disabled=not uploaded_files, use_container_width=True):
+    if st.button("Ingest into Endee", disabled=not uploaded_files, use_container_width=True):
         idx = ensure_index(client)
         prog = st.progress(0, text="Processing...")
         for i, val in enumerate(uploaded_files):
@@ -167,13 +167,13 @@ elif page == "Uploads":
 
 # --- Library ---
 elif page == "Library":
-    st.title("📚 Knowledge Library")
+    st.title("Knowledge Library")
     st.markdown("Manage your indexed documents and AI resources. These files power your assistant's contextual intelligence.")
     
     files = [f for f in get_indexed_files(client) if f not in st.session_state.deleted_files]
     
     if not files:
-        st.info("🌑 Memory is empty. Upload files to get started.")
+        st.info("Memory is empty. Upload files to get started.")
     else:
         # Table Header
         h1, h2, h3, h4, h5 = st.columns([3, 1, 1, 1, 0.5])
@@ -186,17 +186,17 @@ elif page == "Library":
 
         for f in files:
             c1, c2, c3, c4, c5 = st.columns([3, 1, 1, 1, 0.5])
-            c1.markdown(f"📄 **{f}**")
+            c1.markdown(f"**{f}**")
             c2.markdown('<span class="badge-indexed">• INDEXED</span>', unsafe_allow_html=True)
             c3.write("2.4 MB") # Placeholder
             c4.write("Oct 12, 2023") # Placeholder
-            if c5.button("🗑️", key=f"del_{f}"):
+            if c5.button("Bucket", key=f"del_{f}"):
                 if delete_by_filename(client, f):
                     st.session_state.deleted_files.add(f)
                     st.rerun()
         
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🗑️ Wipe Knowledge Base", use_container_width=True, type="secondary"):
+        if st.button("Wipe Knowledge Base", use_container_width=True, type="secondary"):
             try:
                 client.delete_index("knowledge_base")
                 st.success("Knowledge Base Wiped. It will be recreated on next upload.")
@@ -204,7 +204,7 @@ elif page == "Library":
             except Exception as e:
                 st.error(f"Wipe failed: {e}")
 
-        if st.button("🔄 Force Recreate Index (Fix Mode)", use_container_width=True):
+        if st.button("Force Recreate Index (Fix Mode)", use_container_width=True):
             try:
                 client.delete_index("knowledge_base")
             except:
@@ -216,7 +216,7 @@ elif page == "Library":
 
 # --- Analytics ---
 elif page == "Analytics":
-    st.title("📊 Knowledge Analytics")
+    st.title("Knowledge Analytics")
     st.markdown("Real-time performance metrics and cognitive usage insights.")
     
     real_files = len(get_indexed_files(client))
@@ -248,7 +248,7 @@ elif page == "Analytics":
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("### 📈 Intelligent Retrieval Velocity")
+    st.markdown("### Intelligent Retrieval Velocity")
     import pandas as pd
     import numpy as np
     
@@ -258,27 +258,27 @@ elif page == "Analytics":
     )
     st.area_chart(chart_data, color="#6366F1")
     
-    st.markdown("### 🔍 Topic Distribution")
+    st.markdown("### Topic Distribution")
     topic_data = pd.DataFrame({
         'Topic': list(stats["topics"].keys()),
         'Frequency': list(stats["topics"].values())
     })
     st.bar_chart(topic_data.set_index('Topic'), color="#3B82F6")
     
-    if st.button("🔄 Refresh Analytics", use_container_width=True):
+    if st.button(" Refresh Analytics", use_container_width=True):
         st.rerun()
 
 # --- Settings ---
 elif page == "Settings":
-    st.title("⚙️ Settings")
+    st.title(" Settings")
     st.markdown("Refine your assistant's intellect and presence.")
     
-    with st.expander("🤖 AI Configuration"):
+    with st.expander(" AI Configuration"):
         st.selectbox("Model Selection", ["Claude 3.5 Sonnet", "Gemini 2.0 Flash", "GPT-4o"])
         st.slider("Temperature", 0.0, 1.0, 0.7)
         st.number_input("Max Tokens", 4096)
         
-    with st.expander("🔐 Security & Privacy"):
+    with st.expander(" Security & Privacy"):
         st.text_input("API Key Management", "••••••••••••••••••••", type="password")
         st.checkbox("Keep chat history indefinitely", value=True)
         st.button("Rotate Key")
