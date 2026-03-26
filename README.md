@@ -1,20 +1,20 @@
-# ⚡ Curator AI: Knowledge Engine
+# Curator AI: Knowledge Engine
 
 A premium **Retrieval-Augmented Generation (RAG)** platform built on **Endee**, a blazingly fast open-source vector database. Curator AI transforms static documents into a dynamic, searchable, and intelligent private database with a state-of-the-art UI/UX.
 
-*🌐 Live Demo*: [Live](https://vikash9546-endee-assignmentapp-uhvshp.streamlit.app/)
+* Live Demo*: [Live](https://vikash9546-endee-assignmentapp-uhvshp.streamlit.app/)
 
 ---
 
-## 💎 Key Features
+## Key Features
 
-### 1. 🤖 AI Knowledge Assistant (Premium RAG)
+### 1. AI Knowledge Assistant (Premium RAG)
 Ask complex questions about your private documents. The system retrieves the most relevant context from Endee to provide accurate, fact-grounded answers.
 - **Visual OCR Support**: Integrated Gemini Vision reads handwritten notes or scanned PDFs.
 - **Stateful Memory**: Maintains context for fluid, multi-turn technical conversations.
 - **Sleek Glassmorphism UI**: A modern, theme-aware interface that adapts to Light and Dark modes.
 
-### 2. 📊 Intelligent Knowledge Analytics
+### 2. Intelligent Knowledge Analytics
 Gain deep insights into your knowledge base performance and user curiosity.
 - **Real-time Velocity Tracking**: Monitor query volume and retrieval speeds via dynamic area charts.
 - **Topic Clustering**: Identify "Market Analysis" trends and other most-queried topics automatically.
@@ -22,7 +22,7 @@ Gain deep insights into your knowledge base performance and user curiosity.
 
 ---
 
-## 🚀 How It Works
+## How It Works
 
 | Step | Functionality | Powered By |
 |------|---------------|------------|
@@ -53,7 +53,7 @@ graph TD
 
 ---
 
-## 🛠️ Quick Start (Local Setup)
+## Quick Start (Local Setup)
 
 ### 1. Clone & Install
 ```bash
@@ -88,7 +88,7 @@ streamlit run app.py
 
 ---
 
-## ☁️ Cloud Deployment
+## Cloud Deployment
 
 Curator AI is optimized for **Streamlit Cloud** and **Railway**.
 
