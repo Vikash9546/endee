@@ -99,7 +99,7 @@ def generate_answer(question: str, contexts: list[str]) -> str:
         try:
             return generate_with_gemini(prompt)
         except Exception as e:
-            print(f"  ⚠  Gemini failed: {e}")
+            print(f"  Gemini failed: {e}")
 
     return None
 
@@ -133,7 +133,7 @@ def main():
     try:
         index = client.get_index(name=INDEX_NAME)
     except Exception:
-        print("❌  Index not found. Run `python ingest.py` first.")
+        print(" Index not found. Run `python ingest.py` first.")
         return
 
     results = retrieve(question, model, index, top_k=args.top_k)
@@ -144,7 +144,7 @@ def main():
 
     # Display semantic search results
     print("\n" + "=" * 55)
-    print("  🔍  SEMANTIC SEARCH RESULTS (from Endee)")
+    print("  SEMANTIC SEARCH RESULTS (from Endee)")
     print("=" * 55)
 
     contexts = []
@@ -160,7 +160,7 @@ def main():
 
     # ── Step 3: Send to LLM for Generation ────────────
     print("\n" + "=" * 55)
-    print("  🤖  RAG GENERATION (LLM + Endee Context)")
+    print("  RAG GENERATION (LLM + Endee Context)")
     print("=" * 55)
 
     has_gemini = bool(os.environ.get("GEMINI_API_KEY"))
@@ -176,11 +176,11 @@ def main():
 
     if answer:
         print("  ╔══════════════════════════════════════════════╗")
-        print("  ║  ✨  FINAL ANSWER                           ║")
+        print("  ║   FINAL ANSWER                           ║")
         print("  ╚══════════════════════════════════════════════╝")
         print(f"\n  {answer}\n")
     else:
-        print("  ❌  All LLM providers failed. Showing raw context:")
+        print("   All LLM providers failed. Showing raw context:")
         for ctx in contexts:
             print(f"  {ctx[:300]}")
             print()
