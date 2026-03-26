@@ -138,7 +138,7 @@ def main():
         batch = all_payloads[i : i + BATCH]
         index.upsert(batch)
 
-    print(f"\n✅  Done! {len(all_payloads)} chunks indexed. Ready for queries.")
+    print(f"\n Done! {len(all_payloads)} chunks indexed. Ready for queries.")
 
 
 if __name__ == "__main__":
