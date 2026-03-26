@@ -68,7 +68,7 @@ for i, inc in enumerate(past_incidents):
         "meta": inc
     })
 memory_index.upsert(payloads)
-print(f"        ✓ {len(payloads)} past incidents committed to long-term memory.")
+print(f" ✓ {len(payloads)} past incidents committed to long-term memory.")
 
 
 # ── 3. Define the LLM's Tool (Function Calling) ─────────────
@@ -77,7 +77,7 @@ def search_memory(error_signature: str) -> str:
     """
     The Agent calls this tool to browse its Endee vector memory.
     """
-    print(f"\n  [Agent Tool Execution] 🔍 Querying Endee Memory for: '{error_signature}'")
+    print(f"\n  [Agent Tool Execution] Querying Endee Memory for: '{error_signature}'")
     vec = model.encode([error_signature])[0].tolist()
     
     # Query Endee for the closest past incident
@@ -98,7 +98,7 @@ def run_agentic_loop(new_error: str):
     Runs the autonomous agent loop using Gemini 3-Flash.
     The agent consults its Endee memory before making a decision.
     """
-    print(f"\n🚨 NEW ALERT RECEIVED: {new_error}\n")
+    print(f"\n NEW ALERT RECEIVED: {new_error}\n")
     print("🤖 Agent Thinking: Analyzing alert signature...")
     
     # 1. Autonomous Retrieval from Endee Memory
@@ -108,7 +108,7 @@ def run_agentic_loop(new_error: str):
     from google import genai
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
-        print("❌ Error: GEMINI_API_KEY not found in environment.")
+        print(" Error: GEMINI_API_KEY not found in environment.")
         return
     gen_client = genai.Client()
 
@@ -146,16 +146,16 @@ def run_agentic_loop(new_error: str):
             continue
 
     if response_text:
-        print(f"\n🤖 Agent Decision Engine:\n{response_text}\n")
+        print(f"\n Agent Decision Engine:\n{response_text}\n")
     else:
-        print(f"❌ Agent Loop Failed: Quota exceeded on all Gemini models.")
+        print(f" Agent Loop Failed: Quota exceeded on all Gemini models.")
 
 
 # ── RUN PLAYBOOKS ──────────────────────────────────────────
 
 if __name__ == "__main__":
     print("\n==================================================================")
-    print(" 🚨 GHOST-PROTOCOL: Automated Incident Response Agent")
+    print(" GHOST-PROTOCOL: Automated Incident Response Agent")
     print("==================================================================")
     
     print("\n--- Playbook 1: A Known, Auto-Fixable Issue ---")
